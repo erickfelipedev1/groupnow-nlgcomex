@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicMondaySyncRouteImport } from './routes/api/public/monday-sync'
 import { Route as ApiPublicPainelRouteImport } from './routes/api/public/painel'
 import { Route as ApiPublicRdstationWebhookRouteImport } from './routes/api/public/rdstation-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMondaySyncRoute = ApiPublicMondaySyncRouteImport.update({
+  id: '/api/public/monday-sync',
+  path: '/api/public/monday-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPainelRoute = ApiPublicPainelRouteImport.update({
@@ -32,30 +38,47 @@ const ApiPublicRdstationWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/monday-sync': typeof ApiPublicMondaySyncRoute
   '/api/public/painel': typeof ApiPublicPainelRoute
   '/api/public/rdstation-webhook': typeof ApiPublicRdstationWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/monday-sync': typeof ApiPublicMondaySyncRoute
   '/api/public/painel': typeof ApiPublicPainelRoute
   '/api/public/rdstation-webhook': typeof ApiPublicRdstationWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/monday-sync': typeof ApiPublicMondaySyncRoute
   '/api/public/painel': typeof ApiPublicPainelRoute
   '/api/public/rdstation-webhook': typeof ApiPublicRdstationWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/painel' | '/api/public/rdstation-webhook'
+  fullPaths:
+    | '/'
+    | '/api/public/monday-sync'
+    | '/api/public/painel'
+    | '/api/public/rdstation-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/painel' | '/api/public/rdstation-webhook'
-  id: '__root__' | '/' | '/api/public/painel' | '/api/public/rdstation-webhook'
+  to:
+    | '/'
+    | '/api/public/monday-sync'
+    | '/api/public/painel'
+    | '/api/public/rdstation-webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/monday-sync'
+    | '/api/public/painel'
+    | '/api/public/rdstation-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicMondaySyncRoute: typeof ApiPublicMondaySyncRoute
   ApiPublicPainelRoute: typeof ApiPublicPainelRoute
   ApiPublicRdstationWebhookRoute: typeof ApiPublicRdstationWebhookRoute
 }
@@ -67,6 +90,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/monday-sync': {
+      id: '/api/public/monday-sync'
+      path: '/api/public/monday-sync'
+      fullPath: '/api/public/monday-sync'
+      preLoaderRoute: typeof ApiPublicMondaySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/painel': {
@@ -88,6 +118,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicMondaySyncRoute: ApiPublicMondaySyncRoute,
   ApiPublicPainelRoute: ApiPublicPainelRoute,
   ApiPublicRdstationWebhookRoute: ApiPublicRdstationWebhookRoute,
 }

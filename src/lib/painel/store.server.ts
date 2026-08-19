@@ -84,3 +84,56 @@ export async function salvarNegocio(
   );
   if (error) throw new Error(`Falha ao gravar o negócio ${externalId}: ${error.message}`);
 }
+
+/**
+ * Troca o realizado do ano pelo que veio do monday. É substituição, não soma:
+ * o quadro é a fonte da verdade, então mês apagado lá some daqui também.
+ *
+ * Só apaga se a leitura trouxe alguma linha — assim uma resposta vazia por
+ * falha de rede não zera o painel.
+ */
+export async function substituirRealizado(
+  ano: number,
+  linhas: { setor: SetorId; mes: number; valor: number }[],
+): Promise<number> {
+  if (linhas.length === 0) return 0;
+  const sb = getSupabase();
+
+  const { error: erroApagar } = await sb.from("realizado_manual").delete().eq("ano", ano);
+  if (erroApagar) throw new Error(`Falha ao limpar o realizado de ${ano}: ${erroApagar.message}`);
+
+  const { error } = await sb
+    .from("realizado_manual")
+    .insert(linhas.map((l) => ({ ano, setor: l.setor, mes: l.mes, valor: l.valor })));
+  if (error) throw new Error(`Falha ao gravar o realizado de ${ano}: ${error.message}`);
+
+  return linhas.length;
+}
+
+/** Atualiza as metas do ano com o que está no quadro. */
+export async function salvarMetas(
+  ano: number,
+  metasSetor: Partial<Record<SetorId, number>>,
+  metaGlobal: number | null,
+): Promise<void> {
+  const sb = getSupabase();
+
+  if (metaGlobal !== null) {
+    const { error } = await sb
+      .from("meta_ano")
+      .upsert(
+        { ano, meta_global: metaGlobal, atualizado_em: new Date().toISOString() },
+        { onConflict: "ano" },
+      );
+    if (error) throw new Error(`Falha ao gravar a meta global: ${error.message}`);
+  }
+
+  const linhas = Object.entries(metasSetor)
+    .filter(([, meta]) => typeof meta === "number" && meta > 0)
+    .map(([setor, meta]) => ({ ano, setor, meta: meta as number }));
+
+  if (linhas.length > 0) {
+    const { error } = await sb.from("meta_setor").upsert(linhas, { onConflict: "ano,setor" });
+    if (error) throw new Error(`Falha ao gravar as metas por setor: ${error.message}`);
+  }
+}
