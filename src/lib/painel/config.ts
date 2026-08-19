@@ -49,29 +49,3 @@ export const COR_GLOBAL = "#cbd5e1";
  * mesmo se cada setor ficar em ~85%.
  */
 export const META_GLOBAL = 30_600_000;
-
-/**
- * Funil do RD Station CRM -> setor. É daqui que o setor sai: cada funil do RD
- * corresponde a um setor do painel.
- *
- * As chaves são comparadas sem acento, sem caixa e sem espaço sobrando, então
- * "Funil de Desembaraço" casa com "funil de desembaraco".
- */
-export const MAPA_FUNIL: Record<string, SetorId> = {
-  transporte: "transporte",
-  "funil de transporte": "transporte",
-  agenciamento: "agenciamento",
-  "funil de agenciamento": "agenciamento",
-  desembaraco: "desembaraco",
-  "funil de desembaraco": "desembaraco",
-};
-
-/**
- * Fallback quando o nome do funil não está no MAPA_FUNIL: procura a palavra
- * dentro do nome do funil. Só é consultado se o mapa não resolver.
- */
-export const PALAVRAS_SETOR: Record<SetorId, string[]> = {
-  transporte: ["transporte", "frete", "rodoviari", "carreta", "logistic"],
-  agenciamento: ["agenciamento", "agenciam", "agencia de carga", "freight"],
-  desembaraco: ["desembaraco", "aduaneir", "despacho", "customs"],
-};

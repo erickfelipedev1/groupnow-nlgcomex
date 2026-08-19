@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase.server";
 import { META_GLOBAL, SETORES } from "./config";
-import type { Negocio, Painel, Realizado, SetorId } from "./types";
+import type { Painel, Realizado, SetorId } from "./types";
 
 const zerado = (): Realizado =>
   Object.fromEntries(SETORES.map((s) => [s.id, Array(12).fill(0)])) as Realizado;
@@ -11,10 +11,7 @@ const metasPadrao = (): Record<SetorId, number> =>
 type LinhaRealizado = { setor: SetorId; mes: number; valor: number | string };
 type LinhaMeta = { setor: SetorId; meta: number | string };
 
-/**
- * Monta o painel do ano lendo do Supabase. `realizado_mensal` já é a soma da
- * base manual com os negócios do CRM.
- */
+/** Monta o painel do ano lendo do Supabase. */
 export async function carregarPainel(ano: number): Promise<Painel> {
   const sb = getSupabase();
 
@@ -45,44 +42,8 @@ export async function carregarPainel(ano: number): Promise<Painel> {
       Number((anoRes.data as { meta_global?: number } | null)?.meta_global) || META_GLOBAL,
     metasSetor,
     realizado,
-    // O painel não guarda mais os negócios em memória: eles já entraram na view.
-    negocios: {},
     atualizadoEm: new Date().toISOString(),
   };
-}
-
-/**
- * Grava (ou remove) um negócio do CRM. Upsert por `external_id`: reenviar o
- * mesmo negócio atualiza a linha em vez de somar de novo.
- */
-export async function salvarNegocio(
-  externalId: string,
-  negocio: Negocio | null,
-  ano: number,
-): Promise<void> {
-  const sb = getSupabase();
-
-  if (!negocio) {
-    const { error } = await sb.from("negocio").delete().eq("external_id", externalId);
-    if (error) throw new Error(`Falha ao remover o negócio ${externalId}: ${error.message}`);
-    return;
-  }
-
-  const { error } = await sb.from("negocio").upsert(
-    {
-      external_id: externalId,
-      ano,
-      mes: negocio.mes,
-      setor: negocio.setor,
-      valor: negocio.valor,
-      nome: negocio.nome ?? null,
-      funil: negocio.funil ?? null,
-      fechado_em: negocio.fechadoEm ?? null,
-      atualizado_em: new Date().toISOString(),
-    },
-    { onConflict: "external_id" },
-  );
-  if (error) throw new Error(`Falha ao gravar o negócio ${externalId}: ${error.message}`);
 }
 
 /**
