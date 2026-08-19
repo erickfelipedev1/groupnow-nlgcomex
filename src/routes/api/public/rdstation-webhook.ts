@@ -17,6 +17,19 @@ import { safeEqual } from "@/lib/webhook-secret.server";
 export const Route = createFileRoute("/api/public/rdstation-webhook")({
   server: {
     handlers: {
+      // O RD pode sondar a URL antes de ativar a assinatura; responder 2xx é o
+      // que mantém o webhook válido. Continua exigindo o segredo.
+      GET: async ({ request }) => {
+        const esperado = process.env["RD_WEBHOOK_SECRET"];
+        const recebido =
+          new URL(request.url).searchParams.get("secret") ??
+          request.headers.get("x-webhook-secret") ??
+          "";
+        if (!esperado || !recebido || !safeEqual(recebido, esperado)) {
+          return json({ erro: "não autorizado" }, 401);
+        }
+        return json({ ok: true, rota: "rdstation-webhook", metodo: "GET" });
+      },
       POST: async ({ request }) => {
         const esperado = process.env["RD_WEBHOOK_SECRET"];
         if (!esperado) {
@@ -37,7 +50,12 @@ export const Route = createFileRoute("/api/public/rdstation-webhook")({
         try {
           corpo = await request.json();
         } catch {
-          return json({ erro: "JSON inválido" }, 400);
+          // Ao cadastrar a assinatura, o RD sonda a URL e só aceita se a
+          // resposta for 2xx — essa sondagem não traz payload de negócio.
+          // Responder 400 aqui faz o cadastro falhar com "401 Unauthorized",
+          // que parece erro de token.
+          console.warn("[rdstation-webhook] corpo não-JSON (provável validação do RD)");
+          return json({ ok: true, validacao: true });
         }
 
         const t = traduzir(corpo, url.searchParams.get("setor"));
