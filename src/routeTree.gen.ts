@@ -10,33 +10,54 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicPainelRouteImport } from './routes/api/public/painel'
+import { Route as ApiPublicRdstationWebhookRouteImport } from './routes/api/public/rdstation-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPainelRoute = ApiPublicPainelRouteImport.update({
+  id: '/api/public/painel',
+  path: '/api/public/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicRdstationWebhookRoute =
+  ApiPublicRdstationWebhookRouteImport.update({
+    id: '/api/public/rdstation-webhook',
+    path: '/api/public/rdstation-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/painel': typeof ApiPublicPainelRoute
+  '/api/public/rdstation-webhook': typeof ApiPublicRdstationWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/painel': typeof ApiPublicPainelRoute
+  '/api/public/rdstation-webhook': typeof ApiPublicRdstationWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/painel': typeof ApiPublicPainelRoute
+  '/api/public/rdstation-webhook': typeof ApiPublicRdstationWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/painel' | '/api/public/rdstation-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/painel' | '/api/public/rdstation-webhook'
+  id: '__root__' | '/' | '/api/public/painel' | '/api/public/rdstation-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicPainelRoute: typeof ApiPublicPainelRoute
+  ApiPublicRdstationWebhookRoute: typeof ApiPublicRdstationWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +69,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/painel': {
+      id: '/api/public/painel'
+      path: '/api/public/painel'
+      fullPath: '/api/public/painel'
+      preLoaderRoute: typeof ApiPublicPainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/rdstation-webhook': {
+      id: '/api/public/rdstation-webhook'
+      path: '/api/public/rdstation-webhook'
+      fullPath: '/api/public/rdstation-webhook'
+      preLoaderRoute: typeof ApiPublicRdstationWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicPainelRoute: ApiPublicPainelRoute,
+  ApiPublicRdstationWebhookRoute: ApiPublicRdstationWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
