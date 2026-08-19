@@ -9,10 +9,12 @@ let _client: SupabaseClient | undefined;
 export function getSupabase(): SupabaseClient {
   if (_client) return _client;
 
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  // Backend externo do painel tem prioridade; cai no Cloud gerado se não houver.
+  const url = process.env["PAINEL_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+  const key =
+    process.env["PAINEL_SUPABASE_SERVICE_ROLE_KEY"] || process.env["SUPABASE_SERVICE_ROLE_KEY"];
   if (!url || !key) {
-    throw new Error("Faltam SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY nos secrets.");
+    throw new Error("Faltam PAINEL_SUPABASE_URL / PAINEL_SUPABASE_SERVICE_ROLE_KEY nos secrets.");
   }
 
   _client = createClient(url, key, {
