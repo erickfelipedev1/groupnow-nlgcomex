@@ -42,8 +42,12 @@ export const Route = createFileRoute("/api/public/rdstation-webhook")({
 
         const t = traduzir(corpo, url.searchParams.get("setor"));
         if (!t.ok) {
-          console.warn("[rdstation-webhook] payload recusado:", t.erro);
-          return json({ erro: t.erro, funil: t.funil }, 422);
+          // 200 de propósito: é rejeição de regra de negócio, não falha de
+          // entrega. O RD reenvia 5x em qualquer resposta fora do 2xx e
+          // suspende a URL se os erros persistirem — um funil fora do mapa
+          // derrubaria o webhook inteiro, inclusive para os que funcionam.
+          console.warn("[rdstation-webhook] ignorado:", t.erro);
+          return json({ ok: false, ignorado: t.erro, funil: t.funil });
         }
 
         if (url.searchParams.get("dry") === "1") {
