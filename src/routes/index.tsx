@@ -98,11 +98,11 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 function Kpi({ rotulo, valor, cor }: { rotulo: string; valor: string; cor: string }) {
   return (
     <Card className="min-w-0">
-      <p className="truncate text-[9px] font-semibold tracking-[0.14em] text-[#7c8bab] uppercase">
+      <p className="truncate text-[11px] font-semibold tracking-[0.12em] text-[#8ea3c4] uppercase">
         {rotulo}
       </p>
       <p
-        className="mt-1 truncate text-lg font-bold tracking-tight lg:text-xl 2xl:text-2xl"
+        className="mt-1 truncate text-xl font-bold tracking-tight lg:text-2xl 2xl:text-3xl"
         style={{ color: cor }}
       >
         {valor}
@@ -113,7 +113,7 @@ function Kpi({ rotulo, valor, cor }: { rotulo: string; valor: string; cor: strin
 
 function Titulo({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-1.5 shrink-0 text-[10px] font-semibold tracking-[0.12em] text-[#7c8bab] uppercase">
+    <h2 className="mb-1.5 shrink-0 text-xs font-semibold tracking-[0.1em] text-[#8ea3c4] uppercase">
       {children}
     </h2>
   );
@@ -150,21 +150,21 @@ function MensalChart({ valores, cor }: { valores: number[]; cor: string }) {
   const data = valores.map((v, i) => ({ mes: MESES[i], valor: v }));
   return (
     <Grafico>
-      <BarChart data={data} margin={{ top: 16, right: 4, left: -24, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 22, right: 6, left: 6, bottom: 0 }}>
         <XAxis
           dataKey="mes"
-          tick={{ fill: APAGADO, fontSize: 9 }}
+          tick={{ fill: APAGADO, fontSize: 13 }}
           axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
           tickLine={false}
           interval={0}
         />
-        <YAxis tick={{ fill: APAGADO, fontSize: 9 }} axisLine={false} tickLine={false} width={32} />
         <Bar dataKey="valor" fill={cor} radius={[4, 4, 0, 0]} isAnimationActive={false}>
           <LabelList
             dataKey="valor"
             position="top"
-            fontSize={9}
-            fill={APAGADO}
+            fontSize={13}
+            fontWeight={600}
+            fill="#c9d6ee"
             formatter={(v: number) => (v ? pct(v) : "")}
           />
         </Bar>
@@ -232,16 +232,14 @@ function Painel() {
 
       <header className="relative flex shrink-0 flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold tracking-[0.12em] uppercase">
+          <span className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1 text-sm font-bold tracking-[0.1em] uppercase">
             Painel de Metas · Grupo Now
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[9px] font-bold tracking-[0.14em] text-emerald-300 uppercase">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
             Ao vivo
           </span>
-          <span className="text-[10px] text-[#7c8bab]">
-            Atualizado às {hora(data.atualizadoEm)}
-          </span>
+          <span className="text-xs text-[#8ea3c4]">Atualizado às {hora(data.atualizadoEm)}</span>
         </div>
         <span className="rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold tracking-[0.1em]">
           {data.ano}
@@ -290,7 +288,7 @@ function Painel() {
                   boxShadow: "0 0 16px rgba(245,158,11,0.5)",
                 }}
               />
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white/90">
+              <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white">
                 {pct(data.progressoGlobal)}
               </span>
             </div>
@@ -304,19 +302,19 @@ function Painel() {
         {data.setores.map((s) => (
           <Card key={s.id} className="flex min-h-0 flex-col gap-1.5">
             <div className="flex shrink-0 items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-2 text-xs font-semibold">
+              <span className="inline-flex items-center gap-2 text-base font-semibold">
                 <span
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: s.cor, boxShadow: `0 0 10px ${s.cor}` }}
                 />
                 {s.nome}
               </span>
-              <span className="text-lg font-bold" style={{ color: s.cor }}>
+              <span className="text-2xl font-bold" style={{ color: s.cor }}>
                 {pct(s.progressoAnual)}
               </span>
             </div>
             <Barra valor={s.progressoAnual} cor={s.cor} />
-            <p className="shrink-0 text-[10px] text-[#7c8bab]">
+            <p className="shrink-0 text-xs text-[#8ea3c4]">
               {brl(s.realizadoAno)} de {brl(s.metaAnual)} · {pct(s.representatividade)} do realizado
             </p>
             <MensalChart valores={s.progressoMensal} cor={s.cor} />
@@ -335,20 +333,21 @@ function Painel() {
               <YAxis
                 type="category"
                 dataKey="nome"
-                width={92}
-                tick={{ fill: APAGADO, fontSize: 10 }}
+                width={104}
+                tick={{ fill: APAGADO, fontSize: 13 }}
                 axisLine={false}
                 tickLine={false}
               />
-              <Bar dataKey="valor" radius={[0, 6, 6, 0]} isAnimationActive={false} barSize={18}>
+              <Bar dataKey="valor" radius={[0, 6, 6, 0]} isAnimationActive={false} barSize={22}>
                 {ordenados.map((s) => (
                   <Cell key={s.id} fill={s.cor} />
                 ))}
                 <LabelList
                   dataKey="valor"
                   position="right"
-                  fontSize={10}
-                  fill={APAGADO}
+                  fontSize={13}
+                  fontWeight={600}
+                  fill="#c9d6ee"
                   formatter={(v: number) => pct(v)}
                 />
               </Bar>
@@ -382,7 +381,7 @@ function Painel() {
             </div>
             <ul className="flex shrink-0 flex-col justify-center gap-1.5 pr-1">
               {data.setores.map((s) => (
-                <li key={s.id} className="flex items-center gap-2 text-[10px] text-[#7c8bab]">
+                <li key={s.id} className="flex items-center gap-2 text-sm text-[#c9d6ee]">
                   <span
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: s.cor, boxShadow: `0 0 8px ${s.cor}` }}
