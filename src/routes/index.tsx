@@ -5,12 +5,9 @@ import {
   BarChart,
   Cell,
   LabelList,
-  Pie,
-  PieChart,
   ReferenceLine,
   ResponsiveContainer,
   XAxis,
-  YAxis,
 } from "recharts";
 
 export const Route = createFileRoute("/")({
@@ -62,8 +59,8 @@ const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "O
 const CIANO = "#22d3ee";
 const AMBAR = "#f59e0b";
 const ROSA = "#fb7185";
-const APAGADO = "#7c8bab";
 const VERDE = "#34d399";
+const APAGADO = "#7c8bab";
 
 /** A margem é por unidade de negócio; o painel acompanha a da NLG. */
 const UNIDADE_MARGEM = "NLG";
@@ -83,7 +80,10 @@ const pct = (v: number) =>
 
 /** Margem tem uma casa decimal — duas dariam ruído sem informação. */
 const pct1 = (v: number) =>
-  `${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v)}%`;
+  `${new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(v)}%`;
 
 const hora = (iso: string) =>
   new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date(iso));
@@ -99,26 +99,10 @@ function mesesRestantes(ano: number): number {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-2xl border border-white/10 bg-white/[0.03] p-3 shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] ${className}`}
+      className={`rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.05)_inset] ${className}`}
     >
       {children}
     </div>
-  );
-}
-
-function Kpi({ rotulo, valor, cor }: { rotulo: string; valor: string; cor: string }) {
-  return (
-    <Card className="min-w-0">
-      <p className="truncate text-[11px] font-semibold tracking-[0.12em] text-[#8ea3c4] uppercase">
-        {rotulo}
-      </p>
-      <p
-        className="mt-1 truncate text-xl font-bold tracking-tight lg:text-2xl 2xl:text-3xl"
-        style={{ color: cor }}
-      >
-        {valor}
-      </p>
-    </Card>
   );
 }
 
@@ -131,15 +115,17 @@ function Titulo({ children }: { children: React.ReactNode }) {
 }
 
 /** Barra com brilho na cor do setor. `valor` é percentual. */
-function Barra({ valor, cor }: { valor: number; cor: string }) {
+function Barra({ valor, cor, alta = false }: { valor: number; cor: string; alta?: boolean }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+    <div
+      className={`w-full overflow-hidden rounded-full bg-white/[0.06] ${alta ? "h-4" : "h-1.5"}`}
+    >
       <div
         className="h-full rounded-full transition-[width] duration-700"
         style={{
           width: `${Math.min(Math.max(valor, 0), 100)}%`,
           background: `linear-gradient(90deg, ${cor}66, ${cor})`,
-          boxShadow: `0 0 12px ${cor}80`,
+          boxShadow: `0 0 14px ${cor}80`,
         }}
       />
     </div>
@@ -149,7 +135,7 @@ function Barra({ valor, cor }: { valor: number; cor: string }) {
 /** Ocupa toda a altura que o pai der — é o que faz o painel caber na tela. */
 function Grafico({ children }: { children: React.ReactElement }) {
   return (
-    <div className="min-h-[130px] w-full flex-1">
+    <div className="min-h-[110px] w-full flex-1">
       <ResponsiveContainer width="100%" height="100%">
         {children}
       </ResponsiveContainer>
@@ -216,6 +202,55 @@ function MargemChart({ valores }: { valores: (number | null)[] }) {
   );
 }
 
+/** Linha rótulo/valor do bloco de ritmo, no herói. */
+function Linha({ rotulo, valor, cor }: { rotulo: string; valor: string; cor?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-sm text-[#8ea3c4]">{rotulo}</span>
+      <span className="text-lg font-semibold" style={cor ? { color: cor } : undefined}>
+        {valor}
+      </span>
+    </div>
+  );
+}
+
+/** Cartão de um setor (ou da margem): título, número grande, barra e série mensal. */
+function Bloco({
+  nome,
+  cor,
+  destaque,
+  legenda,
+  progresso,
+  children,
+}: {
+  nome: string;
+  cor: string;
+  destaque: string;
+  legenda: string;
+  progresso?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="flex min-h-0 flex-col gap-1.5">
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-2 text-base font-semibold">
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: cor, boxShadow: `0 0 10px ${cor}` }}
+          />
+          {nome}
+        </span>
+        <span className="text-3xl font-bold" style={{ color: cor }}>
+          {destaque}
+        </span>
+      </div>
+      {progresso !== undefined && <Barra valor={progresso} cor={cor} />}
+      <p className="shrink-0 text-xs text-[#8ea3c4]">{legenda}</p>
+      {children}
+    </Card>
+  );
+}
+
 function Painel() {
   const [data, setData] = useState<PainelData | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -253,11 +288,19 @@ function Painel() {
     );
   }
 
-  const ordenados = [...data.setores].sort((a, b) => a.progressoAnual - b.progressoAnual);
-  const melhor = [...data.setores].sort((a, b) => b.progressoAnual - a.progressoAnual)[0];
   const falta = Math.max(data.metaGlobal - data.realizadoAno, 0);
   const restantes = mesesRestantes(data.ano);
   const mesesComValor = data.progressoGlobalMensal.filter((v) => v > 0).length;
+  const mediaMensal = mesesComValor > 0 ? data.realizadoAno / mesesComValor : 0;
+  const necessario = restantes > 0 ? falta / restantes : 0;
+  /** O ritmo atual dá conta? É a pergunta que o painel existe para responder. */
+  const noRitmo = mediaMensal >= necessario;
+  /** Quantas vezes o mês médio seria preciso repetir para fechar o ano. */
+  const vezes = mediaMensal > 0 ? necessario / mediaMensal : 0;
+  const vezesTxt = vezes.toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 
   const margemNLG = data.margem?.[UNIDADE_MARGEM] ?? Array<number | null>(12).fill(null);
   const ultimoLancado = margemNLG.reduce<number>((ultimo, v, i) => (v !== null ? i : ultimo), -1);
@@ -267,7 +310,7 @@ function Painel() {
   return (
     /* Em telas largas o painel é travado na altura da janela e não rola — é uma
        TV. Abaixo de xl volta a ser uma página comum, que rola. */
-    <main className="relative flex min-h-screen flex-col gap-2.5 overflow-hidden bg-[#070c18] p-3 text-[#e8eefb] xl:h-screen xl:p-5">
+    <main className="relative flex min-h-screen flex-col gap-3 overflow-hidden bg-[#070c18] p-3 text-[#e8eefb] xl:h-screen xl:p-5">
       {/* brilho de fundo, puramente decorativo */}
       <div
         aria-hidden
@@ -289,184 +332,83 @@ function Painel() {
           </span>
           <span className="text-xs text-[#8ea3c4]">Atualizado às {hora(data.atualizadoEm)}</span>
         </div>
-        <span className="rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold tracking-[0.1em]">
+        <span className="rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1 text-sm font-bold tracking-[0.1em]">
           {data.ano}
         </span>
       </header>
 
-      <section className="relative grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
-        <Kpi rotulo="Realizado no ano" valor={brl(data.realizadoAno)} cor={CIANO} />
-        <Kpi rotulo="Meta anual" valor={brl(data.metaGlobal)} cor="#e8eefb" />
-        <Kpi rotulo="Falta atingir" valor={brl(falta)} cor={ROSA} />
-        <Kpi rotulo="Meses restantes" valor={String(restantes)} cor={CIANO} />
-        <Kpi
-          rotulo="Necessário por mês"
-          valor={restantes > 0 ? brl(falta / restantes) : "—"}
-          cor={AMBAR}
-        />
-        <Kpi
-          rotulo="Média mensal realizada"
-          valor={mesesComValor > 0 ? brl(data.realizadoAno / mesesComValor) : "—"}
-          cor={AMBAR}
-        />
-        <Kpi rotulo="Progresso global" valor={pct(data.progressoGlobal)} cor={CIANO} />
-        <Kpi
-          rotulo="Setor mais adiantado"
-          valor={melhor ? `${melhor.nome} · ${pct(melhor.progressoAnual)}` : "—"}
-          cor={melhor ? melhor.cor : "#e8eefb"}
-        />
-      </section>
-
-      <section className="relative shrink-0 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-lg bg-amber-400/15 px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-amber-300 uppercase">
-            ★ Meta anual
-          </span>
-          <span className="text-xs font-semibold">
-            {brl(data.realizadoAno)}{" "}
-            <span className="text-[#7c8bab]">/ {brl(data.metaGlobal)}</span>
-          </span>
-          <div className="min-w-[200px] flex-1">
-            <div className="relative h-3.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-              <div
-                className="h-full rounded-full transition-[width] duration-700"
-                style={{
-                  width: `${Math.min(data.progressoGlobal, 100)}%`,
-                  background: "linear-gradient(90deg, #f59e0b, #fb7185)",
-                  boxShadow: "0 0 16px rgba(245,158,11,0.5)",
-                }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white">
-                {pct(data.progressoGlobal)}
-              </span>
-            </div>
-          </div>
-          <span className="text-base">🏆</span>
-        </div>
-      </section>
-
-      {/* As duas faixas de gráficos dividem toda a altura que sobrou. */}
-      <section className="relative grid min-h-0 flex-1 grid-cols-1 gap-2.5 xl:grid-cols-4 xl:grid-rows-2">
-        {data.setores.map((s) => (
-          <Card key={s.id} className="flex min-h-0 flex-col gap-1.5">
-            <div className="flex shrink-0 items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-2 text-base font-semibold">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: s.cor, boxShadow: `0 0 10px ${s.cor}` }}
-                />
-                {s.nome}
-              </span>
-              <span className="text-2xl font-bold" style={{ color: s.cor }}>
-                {pct(s.progressoAnual)}
-              </span>
-            </div>
-            <Barra valor={s.progressoAnual} cor={s.cor} />
-            <p className="shrink-0 text-xs text-[#8ea3c4]">
-              {brl(s.realizadoAno)} de {brl(s.metaAnual)} · {pct(s.representatividade)} do realizado
+      <section className="relative grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,2.3fr)]">
+        {/* Herói: o número que se lê de longe, e o ritmo que o explica. */}
+        <Card className="flex min-h-0 flex-col justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.14em] text-[#8ea3c4] uppercase">
+              Progresso global
             </p>
-            <MensalChart valores={s.progressoMensal} cor={s.cor} />
-          </Card>
-        ))}
-
-        <Card className="flex min-h-0 flex-col gap-1.5">
-          <div className="flex shrink-0 items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-2 text-base font-semibold">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: VERDE, boxShadow: `0 0 10px ${VERDE}` }}
-              />
-              Margem · {UNIDADE_MARGEM}
-            </span>
-            <span
-              className="text-2xl font-bold"
-              style={{ color: margemAtual !== null && margemAtual < 0 ? ROSA : VERDE }}
+            <p
+              className="mt-1 text-6xl leading-none font-bold tracking-tight 2xl:text-7xl"
+              style={{ color: CIANO }}
             >
-              {margemAtual === null ? "—" : pct1(margemAtual)}
-            </span>
-          </div>
-          <p className="shrink-0 text-xs text-[#8ea3c4]">
-            {mesDaMargem ? `último mês lançado: ${mesDaMargem}` : "sem lançamento no ano"}
-          </p>
-          <MargemChart valores={margemNLG} />
-        </Card>
-
-        <Card className="flex min-h-0 flex-col">
-          <Titulo>Progresso anual por setor</Titulo>
-          <Grafico>
-            <BarChart
-              layout="vertical"
-              data={ordenados.map((s) => ({ nome: s.nome, valor: s.progressoAnual }))}
-              margin={{ top: 4, right: 52, left: 4, bottom: 4 }}
-            >
-              <XAxis type="number" hide />
-              <YAxis
-                type="category"
-                dataKey="nome"
-                width={104}
-                tick={{ fill: APAGADO, fontSize: 13 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Bar dataKey="valor" radius={[0, 6, 6, 0]} isAnimationActive={false} barSize={22}>
-                {ordenados.map((s) => (
-                  <Cell key={s.id} fill={s.cor} />
-                ))}
-                <LabelList
-                  dataKey="valor"
-                  position="right"
-                  fontSize={13}
-                  fontWeight={600}
-                  fill="#c9d6ee"
-                  formatter={(v: number) => pct(v)}
-                />
-              </Bar>
-            </BarChart>
-          </Grafico>
-        </Card>
-
-        <Card className="flex min-h-0 flex-col">
-          <Titulo>Representatividade do realizado</Titulo>
-          {/* items-stretch (padrão) é o que dá altura ao filho — com
-              items-center a rosca colapsava para zero. */}
-          <div className="flex min-h-0 flex-1 gap-3">
-            <div className="min-h-[130px] min-w-0 flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data.setores.map((s) => ({ name: s.nome, value: s.representatividade }))}
-                    dataKey="value"
-                    innerRadius="58%"
-                    outerRadius="88%"
-                    paddingAngle={3}
-                    stroke="none"
-                    isAnimationActive={false}
-                  >
-                    {data.setores.map((s) => (
-                      <Cell key={s.id} fill={s.cor} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              {pct(data.progressoGlobal)}
+            </p>
+            <p className="mt-3 text-sm text-[#8ea3c4]">
+              <span className="font-semibold text-[#e8eefb]">{brl(data.realizadoAno)}</span> de{" "}
+              {brl(data.metaGlobal)}
+            </p>
+            <div className="mt-2">
+              <Barra valor={data.progressoGlobal} cor={CIANO} alta />
             </div>
-            <ul className="flex shrink-0 flex-col justify-center gap-1.5 pr-1">
-              {data.setores.map((s) => (
-                <li key={s.id} className="flex items-center gap-2 text-sm text-[#c9d6ee]">
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: s.cor, boxShadow: `0 0 8px ${s.cor}` }}
-                  />
-                  {s.nome}: {pct(s.representatividade)}
-                </li>
-              ))}
-            </ul>
+          </div>
+
+          <div className="space-y-2 border-t border-white/10 pt-3">
+            <p className="text-xs font-semibold tracking-[0.14em] text-[#8ea3c4] uppercase">
+              Ritmo
+            </p>
+            <Linha rotulo="Média mensal realizada" valor={brl(mediaMensal)} />
+            <Linha
+              rotulo="Necessário por mês"
+              valor={restantes > 0 ? brl(necessario) : "—"}
+              cor={noRitmo ? VERDE : AMBAR}
+            />
+            <Linha rotulo="Falta atingir" valor={brl(falta)} cor={ROSA} />
+            <Linha rotulo="Meses restantes" valor={String(restantes)} />
+            <p className="pt-1 text-xs text-[#8ea3c4]">
+              {restantes === 0
+                ? "Ano encerrado."
+                : noRitmo
+                  ? "No ritmo atual, a meta anual fecha."
+                  : `No ritmo atual a meta não fecha: seria preciso ${vezesTxt}x o mês médio.`}
+            </p>
           </div>
         </Card>
 
-        <Card className="flex min-h-0 flex-col xl:col-span-2">
-          <Titulo>Progresso mensal da meta anual</Titulo>
-          <MensalChart valores={data.progressoGlobalMensal} cor={CIANO} />
-        </Card>
+        <div className="grid min-h-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-rows-[1fr_1fr_0.9fr]">
+          {data.setores.map((s) => (
+            <Bloco
+              key={s.id}
+              nome={s.nome}
+              cor={s.cor}
+              destaque={pct(s.progressoAnual)}
+              progresso={s.progressoAnual}
+              legenda={`${brl(s.realizadoAno)} de ${brl(s.metaAnual)} · ${pct(s.representatividade)} do realizado`}
+            >
+              <MensalChart valores={s.progressoMensal} cor={s.cor} />
+            </Bloco>
+          ))}
+
+          <Bloco
+            nome={`Margem · ${UNIDADE_MARGEM}`}
+            cor={margemAtual !== null && margemAtual < 0 ? ROSA : VERDE}
+            destaque={margemAtual === null ? "—" : pct1(margemAtual)}
+            legenda={mesDaMargem ? `último mês lançado: ${mesDaMargem}` : "sem lançamento no ano"}
+          >
+            <MargemChart valores={margemNLG} />
+          </Bloco>
+
+          <Card className="flex min-h-0 flex-col sm:col-span-2">
+            <Titulo>Progresso mensal da meta anual</Titulo>
+            <MensalChart valores={data.progressoGlobalMensal} cor={CIANO} />
+          </Card>
+        </div>
       </section>
     </main>
   );
