@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { interpretar, QUERY_METAS } from "@/lib/painel/monday";
+import { interpretar, interpretarMargem, QUERY_METAS, QUERY_MARGEM } from "@/lib/painel/monday";
 import { anoDoPainel } from "@/lib/painel/painel.server";
-import { salvarMetas, substituirRealizado } from "@/lib/painel/store.server";
+import { salvarMetas, substituirMargem, substituirRealizado } from "@/lib/painel/store.server";
 import { safeEqual } from "@/lib/webhook-secret.server";
 
 /**
@@ -38,26 +38,15 @@ async function sincronizar(request: Request): Promise<Response> {
   }
 
   let resposta: unknown;
+  let respostaMargem: unknown;
   try {
-    const r = await fetch("https://api.monday.com/v2", {
-      method: "POST",
-      headers: { Authorization: token, "Content-Type": "application/json" },
-      body: JSON.stringify({ query: QUERY_METAS }),
-    });
-    if (!r.ok) {
-      return json({ erro: `monday respondeu ${r.status}` }, 502);
-    }
-    resposta = await r.json();
+    [resposta, respostaMargem] = await Promise.all([
+      consultar(token, QUERY_METAS),
+      consultar(token, QUERY_MARGEM),
+    ]);
   } catch (e) {
     console.error("[monday-sync] falha ao consultar o monday:", e);
-    return json({ erro: "falha ao consultar o monday" }, 502);
-  }
-
-  // O GraphQL devolve 200 mesmo com erro; o erro vem no corpo.
-  const erros = (resposta as Record<string, unknown> | null)?.["errors"];
-  if (erros) {
-    console.error("[monday-sync] GraphQL devolveu erros:", JSON.stringify(erros).slice(0, 400));
-    return json({ erro: "monday recusou a consulta", detalhe: erros }, 502);
+    return json({ erro: "falha ao consultar o monday", detalhe: String(e) }, 502);
   }
 
   const leitura = interpretar(resposta);
@@ -74,6 +63,8 @@ async function sincronizar(request: Request): Promise<Response> {
     );
   }
 
+  const margem = interpretarMargem(respostaMargem);
+
   const ano = anoDoPainel();
   const resumo = {
     ano,
@@ -81,7 +72,11 @@ async function sincronizar(request: Request): Promise<Response> {
     metaGlobal: leitura.metaGlobal,
     metasSetor: leitura.metasSetor,
     total: Number(leitura.linhas.reduce((s, l) => s + l.valor, 0).toFixed(2)),
-    ignorados: leitura.ignorados,
+    margem: {
+      lancamentos: margem.linhas.length,
+      unidades: [...new Set(margem.linhas.map((l) => l.unidade))],
+    },
+    ignorados: [...leitura.ignorados, ...margem.ignorados],
   };
 
   if (url.searchParams.get("dry") === "1") {
@@ -91,12 +86,30 @@ async function sincronizar(request: Request): Promise<Response> {
   try {
     await salvarMetas(ano, leitura.metasSetor, leitura.metaGlobal);
     await substituirRealizado(ano, leitura.linhas);
+    await substituirMargem(ano, margem.linhas);
   } catch (e) {
     console.error("[monday-sync] falha ao gravar:", e);
     return json({ erro: "falha ao gravar no banco" }, 500);
   }
 
   return json({ ok: true, ...resumo });
+}
+
+/** Uma consulta ao GraphQL do monday, com os erros dele tratados como falha. */
+async function consultar(token: string, query: string): Promise<unknown> {
+  const r = await fetch("https://api.monday.com/v2", {
+    method: "POST",
+    headers: { Authorization: token, "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!r.ok) throw new Error(`monday respondeu ${r.status}`);
+
+  const corpo: unknown = await r.json();
+  // O GraphQL devolve 200 mesmo com erro; o erro vem no corpo.
+  const erros = (corpo as Record<string, unknown> | null)?.["errors"];
+  if (erros) throw new Error(`monday recusou a consulta: ${JSON.stringify(erros).slice(0, 300)}`);
+
+  return corpo;
 }
 
 function json(corpo: unknown, status = 200): Response {

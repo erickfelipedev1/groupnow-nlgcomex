@@ -1,5 +1,5 @@
 import { MESES_CURTOS, META_GLOBAL, SETORES } from "./config";
-import type { Painel, SetorId } from "./types";
+import type { Margem, Painel, SetorId } from "./types";
 
 const pct = (parte: number, total: number) => (total > 0 ? (parte / total) * 100 : 0);
 const soma = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -28,6 +28,8 @@ export type Metricas = {
   /** Progresso global mês a mês, em % da meta global. */
   progressoGlobalMensal: number[];
   setores: ResumoSetor[];
+  /** Margem por unidade, em %. Não deriva do realizado — vem de outro quadro. */
+  margem: Margem;
 };
 
 export function calcular(painel: Painel): Metricas {
@@ -66,6 +68,7 @@ export function calcular(painel: Painel): Metricas {
     progressoGlobal: pct(realizadoAno, metaGlobal),
     progressoGlobalMensal,
     setores,
+    margem: painel.margem ?? {},
   };
 }
 

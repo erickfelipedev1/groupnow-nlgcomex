@@ -7,6 +7,7 @@ import {
   LabelList,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   XAxis,
   YAxis,
@@ -51,6 +52,8 @@ type PainelData = {
   progressoGlobal: number;
   progressoGlobalMensal: number[];
   setores: Setor[];
+  /** Margem mensal por unidade, em %. `null` = mês sem lançamento. */
+  margem?: Record<string, (number | null)[]>;
 };
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -60,6 +63,10 @@ const CIANO = "#22d3ee";
 const AMBAR = "#f59e0b";
 const ROSA = "#fb7185";
 const APAGADO = "#7c8bab";
+const VERDE = "#34d399";
+
+/** A margem é por unidade de negócio; o painel acompanha a da NLG. */
+const UNIDADE_MARGEM = "NLG";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -73,6 +80,10 @@ const pct = (v: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(v)}%`;
+
+/** Margem tem uma casa decimal — duas dariam ruído sem informação. */
+const pct1 = (v: number) =>
+  `${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v)}%`;
 
 const hora = (iso: string) =>
   new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date(iso));
@@ -173,6 +184,38 @@ function MensalChart({ valores, cor }: { valores: number[]; cor: string }) {
   );
 }
 
+function MargemChart({ valores }: { valores: (number | null)[] }) {
+  const data = valores.map((v, i) => ({ mes: MESES[i], valor: v }));
+  return (
+    <Grafico>
+      <BarChart data={data} margin={{ top: 22, right: 6, left: 6, bottom: 0 }}>
+        <XAxis
+          dataKey="mes"
+          tick={{ fill: APAGADO, fontSize: 13 }}
+          axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
+          tickLine={false}
+          interval={0}
+        />
+        {/* Margem negativa existe e importa: a linha do zero dá a referência. */}
+        <ReferenceLine y={0} stroke="rgba(255,255,255,0.18)" />
+        <Bar dataKey="valor" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+          {data.map((d) => (
+            <Cell key={d.mes} fill={(d.valor ?? 0) >= 0 ? VERDE : ROSA} />
+          ))}
+          <LabelList
+            dataKey="valor"
+            position="top"
+            fontSize={13}
+            fontWeight={600}
+            fill="#c9d6ee"
+            formatter={(v: number | null) => (v === null ? "" : pct1(v))}
+          />
+        </Bar>
+      </BarChart>
+    </Grafico>
+  );
+}
+
 function Painel() {
   const [data, setData] = useState<PainelData | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -215,6 +258,11 @@ function Painel() {
   const falta = Math.max(data.metaGlobal - data.realizadoAno, 0);
   const restantes = mesesRestantes(data.ano);
   const mesesComValor = data.progressoGlobalMensal.filter((v) => v > 0).length;
+
+  const margemNLG = data.margem?.[UNIDADE_MARGEM] ?? Array<number | null>(12).fill(null);
+  const ultimoLancado = margemNLG.reduce<number>((ultimo, v, i) => (v !== null ? i : ultimo), -1);
+  const margemAtual = ultimoLancado >= 0 ? (margemNLG[ultimoLancado] ?? null) : null;
+  const mesDaMargem = ultimoLancado >= 0 ? MESES[ultimoLancado] : null;
 
   return (
     /* Em telas largas o painel é travado na altura da janela e não rola — é uma
@@ -298,7 +346,7 @@ function Painel() {
       </section>
 
       {/* As duas faixas de gráficos dividem toda a altura que sobrou. */}
-      <section className="relative grid min-h-0 flex-1 grid-cols-1 gap-2.5 xl:grid-cols-3 xl:grid-rows-2">
+      <section className="relative grid min-h-0 flex-1 grid-cols-1 gap-2.5 xl:grid-cols-4 xl:grid-rows-2">
         {data.setores.map((s) => (
           <Card key={s.id} className="flex min-h-0 flex-col gap-1.5">
             <div className="flex shrink-0 items-center justify-between gap-2">
@@ -320,6 +368,28 @@ function Painel() {
             <MensalChart valores={s.progressoMensal} cor={s.cor} />
           </Card>
         ))}
+
+        <Card className="flex min-h-0 flex-col gap-1.5">
+          <div className="flex shrink-0 items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-2 text-base font-semibold">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: VERDE, boxShadow: `0 0 10px ${VERDE}` }}
+              />
+              Margem · {UNIDADE_MARGEM}
+            </span>
+            <span
+              className="text-2xl font-bold"
+              style={{ color: margemAtual !== null && margemAtual < 0 ? ROSA : VERDE }}
+            >
+              {margemAtual === null ? "—" : pct1(margemAtual)}
+            </span>
+          </div>
+          <p className="shrink-0 text-xs text-[#8ea3c4]">
+            {mesDaMargem ? `último mês lançado: ${mesDaMargem}` : "sem lançamento no ano"}
+          </p>
+          <MargemChart valores={margemNLG} />
+        </Card>
 
         <Card className="flex min-h-0 flex-col">
           <Titulo>Progresso anual por setor</Titulo>
@@ -393,7 +463,7 @@ function Painel() {
           </div>
         </Card>
 
-        <Card className="flex min-h-0 flex-col">
+        <Card className="flex min-h-0 flex-col xl:col-span-2">
           <Titulo>Progresso mensal da meta anual</Titulo>
           <MensalChart valores={data.progressoGlobalMensal} cor={CIANO} />
         </Card>

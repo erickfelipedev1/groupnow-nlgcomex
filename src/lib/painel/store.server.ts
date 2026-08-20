@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase.server";
 import { META_GLOBAL, SETORES } from "./config";
-import type { Painel, Realizado, SetorId } from "./types";
+import type { Margem, Painel, Realizado, SetorId } from "./types";
 
 const zerado = (): Realizado =>
   Object.fromEntries(SETORES.map((s) => [s.id, Array(12).fill(0)])) as Realizado;
@@ -9,19 +9,21 @@ const metasPadrao = (): Record<SetorId, number> =>
   Object.fromEntries(SETORES.map((s) => [s.id, s.metaAnual])) as Record<SetorId, number>;
 
 type LinhaRealizado = { setor: SetorId; mes: number; valor: number | string };
+type LinhaMargem = { unidade: string; mes: number; valor: number | string };
 type LinhaMeta = { setor: SetorId; meta: number | string };
 
 /** Monta o painel do ano lendo do Supabase. */
 export async function carregarPainel(ano: number): Promise<Painel> {
   const sb = getSupabase();
 
-  const [anoRes, setorRes, realizadoRes] = await Promise.all([
+  const [anoRes, setorRes, realizadoRes, margemRes] = await Promise.all([
     sb.from("meta_ano").select("meta_global").eq("ano", ano).maybeSingle(),
     sb.from("meta_setor").select("setor, meta").eq("ano", ano),
     sb.from("realizado_mensal").select("setor, mes, valor").eq("ano", ano),
+    sb.from("margem").select("unidade, mes, valor").eq("ano", ano),
   ]);
 
-  const erro = anoRes.error ?? setorRes.error ?? realizadoRes.error;
+  const erro = anoRes.error ?? setorRes.error ?? realizadoRes.error ?? margemRes.error;
   if (erro) throw new Error(`Falha ao carregar o painel de ${ano}: ${erro.message}`);
 
   const metasSetor = metasPadrao();
@@ -36,12 +38,19 @@ export async function carregarPainel(ano: number): Promise<Painel> {
     }
   }
 
+  const margem: Margem = {};
+  for (const linha of (margemRes.data ?? []) as LinhaMargem[]) {
+    const serie = (margem[linha.unidade] ??= Array<number | null>(12).fill(null));
+    if (linha.mes >= 1 && linha.mes <= 12) serie[linha.mes - 1] = Number(linha.valor);
+  }
+
   return {
     ano,
     metaGlobal:
       Number((anoRes.data as { meta_global?: number } | null)?.meta_global) || META_GLOBAL,
     metasSetor,
     realizado,
+    margem,
     atualizadoEm: new Date().toISOString(),
   };
 }
@@ -97,4 +106,26 @@ export async function salvarMetas(
     const { error } = await sb.from("meta_setor").upsert(linhas, { onConflict: "ano,setor" });
     if (error) throw new Error(`Falha ao gravar as metas por setor: ${error.message}`);
   }
+}
+
+/**
+ * Troca a margem do ano pela que veio do monday. Mesma regra do realizado:
+ * substitui em vez de somar, e leitura vazia não apaga nada.
+ */
+export async function substituirMargem(
+  ano: number,
+  linhas: { unidade: string; mes: number; valor: number }[],
+): Promise<number> {
+  if (linhas.length === 0) return 0;
+  const sb = getSupabase();
+
+  const { error: erroApagar } = await sb.from("margem").delete().eq("ano", ano);
+  if (erroApagar) throw new Error(`Falha ao limpar a margem de ${ano}: ${erroApagar.message}`);
+
+  const { error } = await sb
+    .from("margem")
+    .insert(linhas.map((l) => ({ ano, unidade: l.unidade, mes: l.mes, valor: l.valor })));
+  if (error) throw new Error(`Falha ao gravar a margem de ${ano}: ${error.message}`);
+
+  return linhas.length;
 }

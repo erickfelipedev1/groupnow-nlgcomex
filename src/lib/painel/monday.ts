@@ -30,6 +30,30 @@ export const QUERY_METAS = `query {
   }
 }`;
 
+/**
+ * Quadro "Indicador de Margem - Bruno": grupo = unidade de negócio, item = mês
+ * abreviado, coluna numérica = margem em %.
+ *
+ * É outro corte da empresa (NLG, Jornada 4S, NDL...), não os setores do painel.
+ */
+export const BOARD_MARGEM = "18427319518";
+export const COLUNA_MARGEM = "numeric_mm6c9hk5";
+
+export const QUERY_MARGEM = `query {
+  boards (ids: [${BOARD_MARGEM}]) {
+    items_page (limit: 200) {
+      items {
+        name
+        group { title }
+        column_values (ids: ["${COLUNA_MARGEM}"]) {
+          id
+          text
+        }
+      }
+    }
+  }
+}`;
+
 const MESES: Record<string, number> = {
   janeiro: 1,
   fevereiro: 2,
@@ -43,6 +67,18 @@ const MESES: Record<string, number> = {
   outubro: 10,
   novembro: 11,
   dezembro: 12,
+  jan: 1,
+  fev: 2,
+  mar: 3,
+  abr: 4,
+  mai: 5,
+  jun: 6,
+  jul: 7,
+  ago: 8,
+  set: 9,
+  out: 10,
+  nov: 11,
+  dez: 12,
 };
 
 /** Tira acento, caixa e espaço sobrando — os títulos são digitados à mão. */
@@ -151,4 +187,47 @@ export function interpretar(resposta: unknown): LeituraMonday {
   }
 
   return leitura;
+}
+
+export type LinhaMargem = { unidade: string; mes: number; valor: number };
+
+/**
+ * Lê a margem por unidade. Ao contrário do faturamento, aqui o nome do grupo é
+ * guardado como veio: as unidades não são um conjunto fechado como os setores.
+ */
+export function interpretarMargem(resposta: unknown): {
+  linhas: LinhaMargem[];
+  ignorados: string[];
+} {
+  const raiz = resposta as Record<string, unknown> | null;
+  const dados = raiz?.["data"] as Record<string, unknown> | undefined;
+  const boards = dados?.["boards"];
+  const board = Array.isArray(boards)
+    ? (boards[0] as Record<string, unknown> | undefined)
+    : undefined;
+  const page = board?.["items_page"] as Record<string, unknown> | undefined;
+  const items = page?.["items"];
+
+  const linhas: LinhaMargem[] = [];
+  const ignorados: string[] = [];
+  if (!Array.isArray(items)) return { linhas, ignorados };
+
+  for (const bruto of items as ItemRaw[]) {
+    const nome = texto(bruto.name);
+    const unidade = texto(bruto.group?.title).trim();
+    const mes = mesDoItem(nome);
+
+    if (!unidade || !mes) {
+      ignorados.push(`${unidade || "sem grupo"} / ${nome || "sem nome"}`);
+      continue;
+    }
+
+    const colunas = Array.isArray(bruto.column_values) ? (bruto.column_values as ColunaRaw[]) : [];
+    const valor = numero(texto(colunas.find((c) => texto(c.id) === COLUNA_MARGEM)?.text));
+
+    // Mês sem margem lançada não vira linha — fica ausente, que é diferente de 0%.
+    if (valor !== null) linhas.push({ unidade, mes, valor });
+  }
+
+  return { linhas, ignorados };
 }
