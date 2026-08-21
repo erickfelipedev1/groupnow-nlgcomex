@@ -149,12 +149,15 @@ function Stat({
   rotulo,
   valor,
   detalhe,
+  progresso,
 }: {
   icone: React.ReactNode;
   cor: string;
   rotulo: string;
   valor: string;
   detalhe: string;
+  /** Quando presente, o cartão ganha a mesma barra do progresso do ano. */
+  progresso?: number;
 }) {
   return (
     <Card className="flex items-center gap-4 p-4">
@@ -171,7 +174,12 @@ function Stat({
         <p className="mt-0.5 truncate text-3xl font-semibold tracking-[-0.5px] 2xl:text-4xl">
           {valor}
         </p>
-        <p className="mt-0.5 truncate text-xs" style={{ color: MUDO }}>
+        {progresso !== undefined && (
+          <div className="mt-2">
+            <Barra valor={progresso} cor={cor} altura={6} />
+          </div>
+        )}
+        <p className="mt-1 truncate text-xs" style={{ color: MUDO }}>
           {detalhe}
         </p>
       </div>
@@ -297,10 +305,11 @@ function Painel() {
           />
           <Stat
             icone={<Target size={22} />}
-            cor="#066fd1"
+            cor={PRIMARIA}
             rotulo="Meta anual"
             valor={brlCurto(data.metaGlobal)}
-            detalhe={`${data.setores.length} setores`}
+            progresso={data.progressoGlobal}
+            detalhe={`${brlCurto(data.realizadoAno)} alcançados · ${pct(data.progressoGlobal)}`}
           />
           <Stat
             icone={<TrendingDown size={22} />}
