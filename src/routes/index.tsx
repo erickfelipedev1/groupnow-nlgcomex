@@ -224,8 +224,10 @@ function Tile({
         {icone}
       </Chip>
       <div className="min-w-0">
+        {/* Rótulo pode quebrar em duas linhas: "Setor em destaque no
+            faturamento" não cabe numa só num tile de 1/8 da largura. */}
         <p
-          className="text-[10px] leading-tight font-semibold tracking-[0.06em] uppercase"
+          className="line-clamp-2 text-[10px] leading-tight font-semibold tracking-[0.06em] uppercase"
           style={{ color: MUDO }}
         >
           {rotulo}
@@ -337,7 +339,12 @@ function Painel() {
   const necessario = restantes > 0 ? falta / restantes : 0;
   const mesesComValor = data.progressoGlobalMensal.filter((v) => v > 0).length;
   const mediaMensal = mesesComValor > 0 ? data.realizadoAno / mesesComValor : 0;
-  const melhor = [...data.setores].sort((a, b) => b.progressoAnual - a.progressoAnual)[0];
+  /**
+   * O tile fala em faturamento, então ordena por faturamento — e não por % da
+   * meta, que é outra pergunta. Hoje as três metas são iguais e o resultado
+   * coincide; se uma meta mudar, deixariam de coincidir.
+   */
+  const destaque = [...data.setores].sort((a, b) => b.realizadoAno - a.realizadoAno)[0];
   const ordenados = [...data.setores].sort((a, b) => a.progressoAnual - b.progressoAnual);
   const cor = (s: Setor) => COR_SETOR[s.id] ?? s.cor;
 
@@ -448,9 +455,9 @@ function Painel() {
           <Tile
             icone={<Store size={20} />}
             cor={MARCA}
-            rotulo="Setor mais adiantado"
-            valor={melhor ? melhor.nome : "—"}
-            corDoValor={melhor ? cor(melhor) : TEXTO}
+            rotulo="Setor em destaque no faturamento"
+            valor={destaque ? destaque.nome : "—"}
+            corDoValor={destaque ? cor(destaque) : TEXTO}
           />
         </section>
 
