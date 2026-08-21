@@ -22,6 +22,7 @@ import {
   LayoutGrid,
   LogOut,
   Package,
+  Percent,
   Settings,
   Store,
   Target,
@@ -109,6 +110,11 @@ const COR_SETOR: Record<string, string> = {
   agenciamento: "#cc3366",
   desembaraco: "#8b7cff",
 };
+
+/** A margem é por unidade de negócio; o painel acompanha a da NLG. */
+const UNIDADE_MARGEM = "NLG";
+/** Meta de margem do ano, em pontos percentuais. */
+const META_MARGEM = 40;
 
 const ICONE_SETOR: Record<string, React.ReactNode> = {
   transporte: <Truck size={20} />,
@@ -345,6 +351,16 @@ function Painel() {
    * coincide; se uma meta mudar, deixariam de coincidir.
    */
   const destaque = [...data.setores].sort((a, b) => b.realizadoAno - a.realizadoAno)[0];
+
+  /**
+   * Margem do ano = média simples dos meses lançados, como o usuário definiu.
+   * Não é a margem contábil do período (que seria lucro total ÷ faturamento
+   * total); é a média das margens mensais, e o rótulo diz isso.
+   */
+  const margens = (data.margem?.[UNIDADE_MARGEM] ?? []).filter((v): v is number => v !== null);
+  const margemAnual =
+    margens.length > 0 ? margens.reduce((a, b) => a + b, 0) / margens.length : null;
+  const margemNaMeta = margemAnual !== null && margemAnual >= META_MARGEM;
   const ordenados = [...data.setores].sort((a, b) => a.progressoAnual - b.progressoAnual);
   const cor = (s: Setor) => COR_SETOR[s.id] ?? s.cor;
 
@@ -461,47 +477,99 @@ function Painel() {
           />
         </section>
 
-        {/* Faixa da meta: barra longa com gradiente e o troféu no fim. */}
-        <Card className="flex shrink-0 flex-wrap items-center gap-4 px-4 py-3">
-          <Chip cor={DOURADO} tamanho={52}>
-            <Target size={24} />
-          </Chip>
-          <div className="shrink-0">
-            <p className="text-xs font-semibold tracking-[0.1em] uppercase" style={{ color: MUDO }}>
-              Meta anual
-            </p>
-            <p className="text-2xl font-bold 2xl:text-3xl">
-              {brl(data.realizadoAno)}{" "}
-              <span className="text-xl font-normal" style={{ color: MUDO }}>
-                / {brl(data.metaGlobal)}
-              </span>
-            </p>
-          </div>
-          <div className="min-w-[240px] flex-1">
-            <div
-              className="h-3 w-full overflow-hidden rounded-full"
-              style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
-            >
-              <div
-                className="h-full rounded-full transition-[width] duration-700"
-                style={{
-                  width: `${Math.min(data.progressoGlobal, 100)}%`,
-                  background: `linear-gradient(90deg,${MARCA},#8b7cff,${DOURADO})`,
-                }}
-              />
+        <section className="grid shrink-0 gap-3 xl:grid-cols-[1.75fr_1fr]">
+          {/* Faixa da meta: barra longa com gradiente e o troféu no fim. */}
+          <Card className="flex flex-wrap items-center gap-4 px-4 py-3">
+            <Chip cor={DOURADO} tamanho={52}>
+              <Target size={24} />
+            </Chip>
+            <div className="shrink-0">
+              <p
+                className="text-xs font-semibold tracking-[0.1em] uppercase"
+                style={{ color: MUDO }}
+              >
+                Meta anual
+              </p>
+              <p className="text-2xl font-bold 2xl:text-3xl">
+                {brl(data.realizadoAno)}{" "}
+                <span className="text-xl font-normal" style={{ color: MUDO }}>
+                  / {brl(data.metaGlobal)}
+                </span>
+              </p>
             </div>
-            <p className="mt-1.5 text-xs tracking-[0.06em] uppercase" style={{ color: MUDO }}>
-              {restantes > 0 ? `Faltam ${brl(falta)} para atingir a meta` : "Exercício encerrado"}
-            </p>
-          </div>
-          <p className="text-2xl font-bold 2xl:text-3xl">{pct(data.progressoGlobal)}</p>
-          <span
-            className="grid h-14 w-14 place-items-center rounded-xl border"
-            style={{ borderColor: "#eab22e66", backgroundColor: "rgba(234,178,46,0.08)" }}
-          >
-            <Trophy size={26} color={DOURADO} />
-          </span>
-        </Card>
+            <div className="min-w-[240px] flex-1">
+              <div
+                className="h-3 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-700"
+                  style={{
+                    width: `${Math.min(data.progressoGlobal, 100)}%`,
+                    background: `linear-gradient(90deg,${MARCA},#8b7cff,${DOURADO})`,
+                  }}
+                />
+              </div>
+              <p className="mt-1.5 text-xs tracking-[0.06em] uppercase" style={{ color: MUDO }}>
+                {restantes > 0 ? `Faltam ${brl(falta)} para atingir a meta` : "Exercício encerrado"}
+              </p>
+            </div>
+            <p className="text-2xl font-bold 2xl:text-3xl">{pct(data.progressoGlobal)}</p>
+            <span
+              className="grid h-14 w-14 place-items-center rounded-xl border"
+              style={{ borderColor: "#eab22e66", backgroundColor: "rgba(234,178,46,0.08)" }}
+            >
+              <Trophy size={26} color={DOURADO} />
+            </span>
+          </Card>
+
+          {/* Mesma leitura, outra grandeza: margem média do ano contra a meta. */}
+          <Card className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <Chip cor={margemNaMeta ? VERDE : DOURADO} tamanho={52}>
+              <Percent size={24} />
+            </Chip>
+            <div className="shrink-0">
+              <p
+                className="text-xs font-semibold tracking-[0.1em] uppercase"
+                style={{ color: MUDO }}
+              >
+                Margem {UNIDADE_MARGEM}
+              </p>
+              <p className="text-2xl font-bold 2xl:text-3xl">
+                {margemAnual === null ? "—" : pct(margemAnual, 1)}{" "}
+                <span className="text-xl font-normal" style={{ color: MUDO }}>
+                  / {META_MARGEM}%
+                </span>
+              </p>
+            </div>
+            <div className="min-w-[110px] flex-1">
+              <div
+                className="h-3 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-700"
+                  style={{
+                    width: `${Math.min(((margemAnual ?? 0) / META_MARGEM) * 100, 100)}%`,
+                    background: margemNaMeta
+                      ? `linear-gradient(90deg,${MARCA},${VERDE})`
+                      : `linear-gradient(90deg,${MARCA},#8b7cff,${DOURADO})`,
+                  }}
+                />
+              </div>
+              <p className="mt-1.5 text-xs tracking-[0.06em] uppercase" style={{ color: MUDO }}>
+                {margemAnual === null
+                  ? "Sem lançamento no ano"
+                  : margemNaMeta
+                    ? `Meta batida · média de ${margens.length} meses`
+                    : `Faltam ${(META_MARGEM - margemAnual).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })} p.p. · média de ${margens.length} meses`}
+              </p>
+            </div>
+          </Card>
+        </section>
 
         {/* Carrossel: três cartões por vez, alternando sozinho. Os dois slides
             ficam montados o tempo todo — desmontar faria o Recharts remedir
