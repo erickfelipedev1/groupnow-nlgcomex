@@ -84,7 +84,12 @@ const CARTAO = "#0f0b3d";
 const BORDA = "rgba(255,255,255,0.09)";
 const TEXTO = "#eef0ff";
 const MUDO = "#9aa0cc";
-const MARCA = "#3d6aff";
+/**
+ * Azul do logo. Estimado a partir do arquivo enviado pelo usuário — o site só
+ * publica a versão branca da marca, então não deu para amostrar o hex exato.
+ * Se aparecer o valor oficial no manual, é trocar aqui.
+ */
+const MARCA = "#1a35f0";
 const DOURADO = "#eab22e";
 const MAGENTA = "#cc3366";
 /**
@@ -332,7 +337,7 @@ function Painel() {
               className="grid h-10 w-10 place-items-center rounded-xl"
               style={
                 i === 0
-                  ? { backgroundColor: "rgba(61,106,255,0.14)", color: MARCA }
+                  ? { backgroundColor: "rgba(26,53,240,0.18)", color: "#7d92ff" }
                   : { color: "#5b6a86" }
               }
             >
@@ -448,7 +453,7 @@ function Painel() {
                 className="h-full rounded-full transition-[width] duration-700"
                 style={{
                   width: `${Math.min(data.progressoGlobal, 100)}%`,
-                  background: "linear-gradient(90deg,#3d6aff,#8b7cff,#eab22e)",
+                  background: `linear-gradient(90deg,${MARCA},#8b7cff,${DOURADO})`,
                 }}
               />
             </div>
