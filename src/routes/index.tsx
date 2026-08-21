@@ -75,21 +75,34 @@ type PainelData = {
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-const FUNDO = "#080b16";
-const CARTAO = "#0e1424";
-const BORDA = "rgba(255,255,255,0.07)";
-const TEXTO = "#e8eefb";
-const MUDO = "#8b9ab5";
-const CIANO = "#22d3ee";
+/**
+ * Identidade da NLG, extraída do nlgcomex.com.br: navy #0a0734, dourado
+ * #eab22e, azul elétrico #3d6aff, magenta #cc3366, e a fonte Outfit.
+ */
+const FUNDO = "#070428";
+const CARTAO = "#0f0b3d";
+const BORDA = "rgba(255,255,255,0.09)";
+const TEXTO = "#eef0ff";
+const MUDO = "#9aa0cc";
+const MARCA = "#3d6aff";
+const DOURADO = "#eab22e";
+const MAGENTA = "#cc3366";
+/**
+ * Verde e vermelho ficam fora da paleta da marca de propósito: aqui a cor é
+ * semântica (no ritmo / fora do ritmo), não decoração. Pintar de dourado um
+ * aviso de atraso esconderia justamente o que ele precisa mostrar.
+ */
 const VERDE = "#34d399";
-const AMBAR = "#f5c518";
 const VERMELHO = "#f43f5e";
 
-/** Cores por setor, no tom do mockup: âmbar, azul e roxo. */
+/**
+ * Três cores distinguíveis entre si. Duas são da marca; o violeta é derivado
+ * entre o azul e o magenta, porque a marca não tem um terceiro tom próprio.
+ */
 const COR_SETOR: Record<string, string> = {
-  transporte: "#f5c518",
-  agenciamento: "#2f9bf5",
-  desembaraco: "#a855f7",
+  transporte: "#eab22e",
+  agenciamento: "#cc3366",
+  desembaraco: "#8b7cff",
 };
 
 const ICONE_SETOR: Record<string, React.ReactNode> = {
@@ -308,7 +321,7 @@ function Painel() {
       >
         <span
           className="mb-4 grid h-10 w-10 place-items-center rounded-xl text-lg font-bold"
-          style={{ background: "linear-gradient(135deg,#22d3ee,#a855f7)", color: "#06101f" }}
+          style={{ background: `linear-gradient(135deg,${MARCA},${DOURADO})`, color: "#0b0736" }}
         >
           N
         </span>
@@ -319,7 +332,7 @@ function Painel() {
               className="grid h-10 w-10 place-items-center rounded-xl"
               style={
                 i === 0
-                  ? { backgroundColor: "rgba(34,211,238,0.12)", color: CIANO }
+                  ? { backgroundColor: "rgba(61,106,255,0.14)", color: MARCA }
                   : { color: "#5b6a86" }
               }
             >
@@ -331,9 +344,12 @@ function Painel() {
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 xl:p-4">
         <header className="flex shrink-0 flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-[0.01em] 2xl:text-3xl">
-            PAINEL DE METAS <span style={{ color: MUDO }}>•</span> GRUPO NOW
-          </h1>
+          <img
+            src="/logo-nlg.png"
+            alt="Now Logistics Group"
+            className="h-8 w-auto shrink-0 2xl:h-9"
+          />
+          <h1 className="text-2xl font-bold tracking-[0.01em] 2xl:text-3xl">PAINEL DE METAS</h1>
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-[0.1em] uppercase"
             style={{ backgroundColor: "rgba(52,211,153,0.12)", color: VERDE }}
@@ -355,13 +371,13 @@ function Painel() {
         <section className="grid shrink-0 grid-cols-2 gap-2.5 sm:grid-cols-4 2xl:grid-cols-8">
           <Tile
             icone={<CircleDollarSign size={20} />}
-            cor="#3b82f6"
+            cor={MARCA}
             rotulo="Realizado no ano"
             valor={brl(data.realizadoAno)}
           />
           <Tile
             icone={<Target size={20} />}
-            cor="#a855f7"
+            cor="#8b7cff"
             rotulo="Meta anual"
             valor={brl(data.metaGlobal)}
           />
@@ -373,16 +389,16 @@ function Painel() {
           />
           <Tile
             icone={<CalendarDays size={20} />}
-            cor="#fb923c"
+            cor={MAGENTA}
             rotulo="Meses restantes"
             valor={String(restantes)}
           />
           <Tile
             icone={<Coins size={20} />}
-            cor={AMBAR}
+            cor={DOURADO}
             rotulo="Necessário por mês"
             valor={restantes > 0 ? brl(necessario) : "—"}
-            corDoValor={AMBAR}
+            corDoValor={DOURADO}
           />
           <Tile
             icone={<TrendingUp size={20} />}
@@ -393,14 +409,14 @@ function Painel() {
           />
           <Tile
             icone={<ChartPie size={20} />}
-            cor={CIANO}
+            cor={MARCA}
             rotulo="Progresso global"
             valor={pct(data.progressoGlobal)}
-            corDoValor={CIANO}
+            corDoValor={MARCA}
           />
           <Tile
             icone={<Store size={20} />}
-            cor="#3b82f6"
+            cor={MARCA}
             rotulo="Setor mais adiantado"
             valor={melhor ? melhor.nome : "—"}
             corDoValor={melhor ? cor(melhor) : TEXTO}
@@ -409,7 +425,7 @@ function Painel() {
 
         {/* Faixa da meta: barra longa com gradiente e o troféu no fim. */}
         <Card className="flex shrink-0 flex-wrap items-center gap-4 px-4 py-3">
-          <Chip cor={AMBAR} tamanho={52}>
+          <Chip cor={DOURADO} tamanho={52}>
             <Target size={24} />
           </Chip>
           <div className="shrink-0">
@@ -432,7 +448,7 @@ function Painel() {
                 className="h-full rounded-full transition-[width] duration-700"
                 style={{
                   width: `${Math.min(data.progressoGlobal, 100)}%`,
-                  background: "linear-gradient(90deg,#3b82f6,#a855f7,#f43f5e)",
+                  background: "linear-gradient(90deg,#3d6aff,#8b7cff,#eab22e)",
                 }}
               />
             </div>
@@ -443,9 +459,9 @@ function Painel() {
           <p className="text-2xl font-bold 2xl:text-3xl">{pct(data.progressoGlobal)}</p>
           <span
             className="grid h-14 w-14 place-items-center rounded-xl border"
-            style={{ borderColor: "#f5c51866", backgroundColor: "rgba(245,197,24,0.08)" }}
+            style={{ borderColor: "#eab22e66", backgroundColor: "rgba(234,178,46,0.08)" }}
           >
-            <Trophy size={26} color={AMBAR} />
+            <Trophy size={26} color={DOURADO} />
           </span>
         </Card>
 
@@ -594,7 +610,7 @@ function Painel() {
 
               <Card className="flex min-h-0 flex-col">
                 <TituloCard>Progresso mensal da meta anual</TituloCard>
-                <MensalChart valores={data.progressoGlobalMensal} cor={CIANO} />
+                <MensalChart valores={data.progressoGlobalMensal} cor={MARCA} />
               </Card>
             </div>
           </div>
@@ -606,7 +622,7 @@ function Painel() {
                 className="h-1.5 rounded-full transition-all duration-500"
                 style={{
                   width: i === slide ? 20 : 6,
-                  backgroundColor: i === slide ? CIANO : "rgba(255,255,255,0.22)",
+                  backgroundColor: i === slide ? MARCA : "rgba(255,255,255,0.22)",
                 }}
               />
             ))}
@@ -614,7 +630,7 @@ function Painel() {
         </section>
 
         <Card className="flex shrink-0 items-center gap-3 px-4 py-2.5">
-          <Chip cor={CIANO} tamanho={32}>
+          <Chip cor={MARCA} tamanho={32}>
             <Info size={16} />
           </Chip>
           <p className="text-sm" style={{ color: MUDO }}>
@@ -629,7 +645,7 @@ function Painel() {
             ) : restantes > 0 ? (
               <>
                 Atenção ao ritmo: a média de{" "}
-                <span className="font-semibold" style={{ color: AMBAR }}>
+                <span className="font-semibold" style={{ color: DOURADO }}>
                   {brl(mediaMensal)}
                 </span>{" "}
                 por mês está abaixo dos{" "}
@@ -641,7 +657,7 @@ function Painel() {
             ) : (
               <>
                 Exercício encerrado com{" "}
-                <span className="font-semibold" style={{ color: CIANO }}>
+                <span className="font-semibold" style={{ color: MARCA }}>
                   {pct(data.progressoGlobal)}
                 </span>{" "}
                 da meta anual.
