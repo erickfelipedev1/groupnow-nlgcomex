@@ -232,9 +232,22 @@ function MensalChart({ valores, cor }: { valores: number[]; cor: string }) {
   );
 }
 
+/** Segundos que cada painel do carrossel fica na tela. */
+const SEGUNDOS_POR_SLIDE = 12;
+const SLIDES = ["Por setor", "Consolidado"];
+
 function Painel() {
   const [data, setData] = useState<PainelData | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [slide, setSlide] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(
+      () => setSlide((s) => (s + 1) % SLIDES.length),
+      SEGUNDOS_POR_SLIDE * 1000,
+    );
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -436,132 +449,168 @@ function Painel() {
           </span>
         </Card>
 
-        <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-3">
-          {data.setores.map((s) => (
-            <Card key={s.id} className="flex min-h-0 flex-col">
-              <div className="flex shrink-0 items-center gap-3 px-4 pt-3">
-                <Chip cor={cor(s)} tamanho={40}>
-                  {ICONE_SETOR[s.id] ?? <Package size={20} />}
-                </Chip>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-lg font-bold tracking-[0.04em] uppercase">{s.nome}</span>
-                    <span className="text-2xl font-bold" style={{ color: cor(s) }}>
-                      {pct(s.progressoAnual)}
-                    </span>
+        {/* Carrossel: três cartões por vez, alternando sozinho. Os dois slides
+            ficam montados o tempo todo — desmontar faria o Recharts remedir
+            tudo a cada troca. */}
+        <section className="relative min-h-0 flex-1 overflow-hidden">
+          <div
+            className="flex h-full transition-transform duration-700 ease-in-out"
+            style={{
+              width: `${SLIDES.length * 100}%`,
+              transform: `translateX(-${slide * (100 / SLIDES.length)}%)`,
+            }}
+          >
+            <div className="grid h-full w-full min-w-0 grid-cols-1 gap-3 pr-3 xl:grid-cols-3">
+              {data.setores.map((s) => (
+                <Card key={s.id} className="flex min-h-0 flex-col">
+                  <div className="flex shrink-0 items-center gap-3 px-4 pt-3">
+                    <Chip cor={cor(s)} tamanho={40}>
+                      {ICONE_SETOR[s.id] ?? <Package size={20} />}
+                    </Chip>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-lg font-bold tracking-[0.04em] uppercase">
+                          {s.nome}
+                        </span>
+                        <span className="text-2xl font-bold" style={{ color: cor(s) }}>
+                          {pct(s.progressoAnual)}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs" style={{ color: MUDO }}>
+                        {brl(s.realizadoAno)} de {brl(s.metaAnual)} • {pct(s.representatividade)} do
+                        realizado
+                      </p>
+                    </div>
                   </div>
-                  <p className="truncate text-xs" style={{ color: MUDO }}>
-                    {brl(s.realizadoAno)} de {brl(s.metaAnual)} • {pct(s.representatividade)} do
-                    realizado
-                  </p>
-                </div>
-              </div>
-              <MensalChart valores={s.progressoMensal} cor={cor(s)} />
-            </Card>
-          ))}
-        </section>
-
-        <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-3">
-          <Card className="flex min-h-0 flex-col">
-            <TituloCard>Progresso anual por setor</TituloCard>
-            <div className="min-h-[120px] flex-1 px-3 pb-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={ordenados.map((s) => ({ nome: s.nome, valor: s.progressoAnual }))}
-                  margin={{ top: 10, right: 56, left: 8, bottom: 4 }}
-                >
-                  <XAxis
-                    type="number"
-                    domain={[0, 100]}
-                    ticks={[0, 25, 50, 75, 100]}
-                    tick={{ fill: MUDO, fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v: number) => `${v}%`}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="nome"
-                    width={104}
-                    tick={{ fill: TEXTO, fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Bar dataKey="valor" radius={[0, 4, 4, 0]} isAnimationActive={false} barSize={16}>
-                    {ordenados.map((s) => (
-                      <Cell key={s.id} fill={cor(s)} />
-                    ))}
-                    <LabelList
-                      dataKey="valor"
-                      position="right"
-                      fontSize={12}
-                      fontWeight={600}
-                      fill={TEXTO}
-                      formatter={(v: number) => pct(v)}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                  <MensalChart valores={s.progressoMensal} cor={cor(s)} />
+                </Card>
+              ))}
             </div>
-          </Card>
 
-          <Card className="flex min-h-0 flex-col">
-            <TituloCard>Representatividade do realizado</TituloCard>
-            {/* items-stretch (padrão): com items-center o filho não estica, a
-                  altura vira zero e o height:100% do gráfico não resolve. */}
-            <div className="flex min-h-0 flex-1 gap-3 px-3 pb-2">
-              <div className="relative min-h-[120px] min-w-0 flex-1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data.setores.map((s) => ({
-                        name: s.nome,
-                        value: s.representatividade,
-                      }))}
-                      dataKey="value"
-                      innerRadius="62%"
-                      outerRadius="92%"
-                      paddingAngle={2}
-                      stroke="none"
-                      isAnimationActive={false}
+            <div className="grid h-full w-full min-w-0 grid-cols-1 gap-3 xl:grid-cols-3">
+              <Card className="flex min-h-0 flex-col">
+                <TituloCard>Progresso anual por setor</TituloCard>
+                <div className="min-h-[120px] flex-1 px-3 pb-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={ordenados.map((s) => ({ nome: s.nome, valor: s.progressoAnual }))}
+                      margin={{ top: 10, right: 56, left: 8, bottom: 4 }}
                     >
-                      {data.setores.map((s) => (
-                        <Cell key={s.id} fill={cor(s)} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
-                  <div>
-                    <p className="text-[10px] tracking-[0.1em] uppercase" style={{ color: MUDO }}>
-                      Total
-                    </p>
-                    <p className="text-sm font-bold">{brl(data.realizadoAno)}</p>
-                  </div>
-                </div>
-              </div>
-              <ul className="flex shrink-0 flex-col justify-center gap-2 pr-1">
-                {[...data.setores]
-                  .sort((a, b) => b.representatividade - a.representatividade)
-                  .map((s) => (
-                    <li key={s.id} className="flex items-center gap-2 text-sm">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: cor(s) }}
+                      <XAxis
+                        type="number"
+                        domain={[0, 100]}
+                        ticks={[0, 25, 50, 75, 100]}
+                        tick={{ fill: MUDO, fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v: number) => `${v}%`}
                       />
-                      <span style={{ color: MUDO }}>{s.nome}</span>
-                      <span className="ml-auto font-semibold">{pct(s.representatividade)}</span>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          </Card>
+                      <YAxis
+                        type="category"
+                        dataKey="nome"
+                        width={104}
+                        tick={{ fill: TEXTO, fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Bar
+                        dataKey="valor"
+                        radius={[0, 4, 4, 0]}
+                        isAnimationActive={false}
+                        barSize={16}
+                      >
+                        {ordenados.map((s) => (
+                          <Cell key={s.id} fill={cor(s)} />
+                        ))}
+                        <LabelList
+                          dataKey="valor"
+                          position="right"
+                          fontSize={12}
+                          fontWeight={600}
+                          fill={TEXTO}
+                          formatter={(v: number) => pct(v)}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
 
-          <Card className="flex min-h-0 flex-col">
-            <TituloCard>Progresso mensal da meta anual</TituloCard>
-            <MensalChart valores={data.progressoGlobalMensal} cor={CIANO} />
-          </Card>
+              <Card className="flex min-h-0 flex-col">
+                <TituloCard>Representatividade do realizado</TituloCard>
+                {/* items-stretch (padrão): com items-center o filho não estica, a
+                  altura vira zero e o height:100% do gráfico não resolve. */}
+                <div className="flex min-h-0 flex-1 gap-3 px-3 pb-2">
+                  <div className="relative min-h-[120px] min-w-0 flex-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={data.setores.map((s) => ({
+                            name: s.nome,
+                            value: s.representatividade,
+                          }))}
+                          dataKey="value"
+                          innerRadius="62%"
+                          outerRadius="92%"
+                          paddingAngle={2}
+                          stroke="none"
+                          isAnimationActive={false}
+                        >
+                          {data.setores.map((s) => (
+                            <Cell key={s.id} fill={cor(s)} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
+                      <div>
+                        <p
+                          className="text-[10px] tracking-[0.1em] uppercase"
+                          style={{ color: MUDO }}
+                        >
+                          Total
+                        </p>
+                        <p className="text-sm font-bold">{brl(data.realizadoAno)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <ul className="flex shrink-0 flex-col justify-center gap-2 pr-1">
+                    {[...data.setores]
+                      .sort((a, b) => b.representatividade - a.representatividade)
+                      .map((s) => (
+                        <li key={s.id} className="flex items-center gap-2 text-sm">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: cor(s) }}
+                          />
+                          <span style={{ color: MUDO }}>{s.nome}</span>
+                          <span className="ml-auto font-semibold">{pct(s.representatividade)}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </Card>
+
+              <Card className="flex min-h-0 flex-col">
+                <TituloCard>Progresso mensal da meta anual</TituloCard>
+                <MensalChart valores={data.progressoGlobalMensal} cor={CIANO} />
+              </Card>
+            </div>
+          </div>
+
+          <div className="absolute right-2 bottom-2 flex items-center gap-2">
+            {SLIDES.map((nome, i) => (
+              <span
+                key={nome}
+                className="h-1.5 rounded-full transition-all duration-500"
+                style={{
+                  width: i === slide ? 20 : 6,
+                  backgroundColor: i === slide ? CIANO : "rgba(255,255,255,0.22)",
+                }}
+              />
+            ))}
+          </div>
         </section>
 
         <Card className="flex shrink-0 items-center gap-3 px-4 py-2.5">
