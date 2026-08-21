@@ -139,6 +139,35 @@ function mesesRestantes(ano: number): number {
   return 12 - (agora.getMonth() + 1);
 }
 
+/**
+ * Marca de barras ascendentes, redesenhada em SVG a partir do arquivo enviado —
+ * quatro retângulos, então vetor sai mais nítido que um PNG reescalado.
+ *
+ * A terceira barra é preta no original. Aqui ela vai em branco: sobre o navy do
+ * painel, preto sobre escuro simplesmente desaparece.
+ */
+function LogoBarras({ tamanho = 40 }: { tamanho?: number }) {
+  const barras = [
+    { x: 1, altura: 14, cor: "#76b82a" },
+    { x: 11, altura: 20, cor: "#f05a24" },
+    { x: 21, altura: 27, cor: "#ffffff" },
+    { x: 31, altura: 33, cor: "#2456a6" },
+  ];
+  return (
+    <svg
+      width={tamanho}
+      height={tamanho}
+      viewBox="0 0 40 40"
+      role="img"
+      aria-label="Now Logistics Group"
+    >
+      {barras.map((b) => (
+        <rect key={b.x} x={b.x} y={37 - b.altura} width={7} height={b.altura} fill={b.cor} />
+      ))}
+    </svg>
+  );
+}
+
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
@@ -324,11 +353,8 @@ function Painel() {
         className="hidden w-[72px] shrink-0 flex-col items-center gap-2 border-r py-4 xl:flex"
         style={{ borderColor: BORDA }}
       >
-        <span
-          className="mb-4 grid h-10 w-10 place-items-center rounded-xl text-lg font-bold"
-          style={{ background: `linear-gradient(135deg,${MARCA},${DOURADO})`, color: "#0b0736" }}
-        >
-          N
+        <span className="mb-4 grid h-10 w-10 place-items-center">
+          <LogoBarras tamanho={34} />
         </span>
         {[LayoutGrid, Truck, Users, Package, BarChart3, Target, Settings, LogOut].map(
           (Icone, i) => (
