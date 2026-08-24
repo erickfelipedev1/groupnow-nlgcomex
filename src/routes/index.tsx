@@ -116,6 +116,23 @@ const UNIDADE_MARGEM = "NLG";
 /** Meta de margem do ano, em pontos percentuais. */
 const META_MARGEM = 40;
 
+/**
+ * A equipe vem das fotos em public/equipe, agrupadas por setor. Não há número
+ * por pessoa: o monday só tem dado por setor e por unidade, e repetir o
+ * percentual do setor em cada rosto sugeriria desempenho individual.
+ */
+const EQUIPE: { nome: string; setor: string; foto: string }[] = [
+  { nome: "Cristiane", setor: "transporte", foto: "cristiane" },
+  { nome: "Kledson", setor: "transporte", foto: "kledson" },
+  { nome: "Amanda", setor: "agenciamento", foto: "amanda" },
+  { nome: "Bianca", setor: "agenciamento", foto: "bianca" },
+  { nome: "Isabela", setor: "agenciamento", foto: "isabela" },
+  { nome: "Leonardo", setor: "desembaraco", foto: "leonardo" },
+  { nome: "Luiza", setor: "desembaraco", foto: "luiza" },
+  { nome: "Marta", setor: "desembaraco", foto: "marta" },
+  { nome: "Nathaly", setor: "desembaraco", foto: "nathaly" },
+];
+
 const ICONE_SETOR: Record<string, React.ReactNode> = {
   transporte: <Truck size={20} />,
   agenciamento: <Users size={20} />,
@@ -289,7 +306,7 @@ function MensalChart({ valores, cor }: { valores: number[]; cor: string }) {
 
 /** Segundos que cada painel do carrossel fica na tela. */
 const SEGUNDOS_POR_SLIDE = 12;
-const SLIDES = ["Por setor", "Consolidado"];
+const SLIDES = ["Por setor", "Consolidado", "Equipe"];
 
 function Painel() {
   const [data, setData] = useState<PainelData | null>(null);
@@ -722,6 +739,63 @@ function Painel() {
               <Card className="flex min-h-0 flex-col">
                 <TituloCard>Progresso mensal da meta anual</TituloCard>
                 <MensalChart valores={data.progressoGlobalMensal} cor={MARCA} />
+              </Card>
+            </div>
+
+            {/* Equipe numa faixa só. Agrupar por setor em colunas
+                proporcionais dava slots de 181x581 para fotos 427x640 — o
+                object-cover comia as laterais do rosto. Numa fileira única cada
+                retrato mantém a proporção original e ninguém é recortado. */}
+            <div className="grid h-full w-full min-w-0 grid-cols-1">
+              <Card className="flex min-h-0 flex-col">
+                <div className="flex shrink-0 items-center gap-3 px-4 pt-3">
+                  <Chip cor={MARCA} tamanho={36}>
+                    <Users size={18} />
+                  </Chip>
+                  <span className="text-lg font-bold tracking-[0.04em] uppercase">Equipe</span>
+                  <span className="ml-auto text-sm" style={{ color: MUDO }}>
+                    {EQUIPE.length} pessoas
+                  </span>
+                </div>
+                <div className="flex min-h-0 flex-1 items-center justify-center gap-3 px-4 py-3">
+                  {EQUIPE.map((pessoa) => {
+                    const setor = data.setores.find((s) => s.id === pessoa.setor);
+                    const corDoSetor = setor ? cor(setor) : MUDO;
+                    return (
+                      <figure
+                        key={pessoa.foto}
+                        className="relative min-w-0 flex-1 self-center overflow-hidden rounded-xl border"
+                        style={{ borderColor: BORDA, aspectRatio: "427 / 640" }}
+                      >
+                        <img
+                          src={`/equipe/${pessoa.foto}.jpg`}
+                          alt={pessoa.nome}
+                          className="h-full w-full object-cover"
+                        />
+                        {/* Degradê para o nome ficar legível sobre qualquer foto. */}
+                        <figcaption
+                          className="absolute inset-x-0 bottom-0 px-2.5 pt-10 pb-2"
+                          style={{
+                            background:
+                              "linear-gradient(to top, rgba(7,4,40,0.94), rgba(7,4,40,0))",
+                          }}
+                        >
+                          <p className="truncate text-base font-bold">{pessoa.nome}</p>
+                          <p
+                            className="flex items-center gap-1.5 truncate text-xs"
+                            style={{ color: MUDO }}
+                          >
+                            <span
+                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: corDoSetor }}
+                            />
+                            {setor ? setor.nome : pessoa.setor}
+                          </p>
+                        </figcaption>
+                      </figure>
+                    );
+                  })}
+                </div>
               </Card>
             </div>
           </div>
