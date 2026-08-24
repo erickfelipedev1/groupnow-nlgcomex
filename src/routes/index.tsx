@@ -17,6 +17,7 @@ import {
   ChartPie,
   CircleDollarSign,
   Coins,
+  Crown,
   Flag,
   Info,
   LayoutGrid,
@@ -201,11 +202,29 @@ function LogoBarras({ tamanho = 40 }: { tamanho?: number }) {
   );
 }
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Card({
+  children,
+  className = "",
+  destaque = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  /** Contorno e brilho dourados, para o cartão coroado. */
+  destaque?: boolean;
+}) {
   return (
     <div
       className={`rounded-2xl border ${className}`}
-      style={{ borderColor: BORDA, backgroundColor: CARTAO }}
+      style={{
+        borderColor: destaque ? "rgba(234,178,46,0.55)" : BORDA,
+        backgroundColor: CARTAO,
+        ...(destaque
+          ? {
+              boxShadow: "0 0 0 1px rgba(234,178,46,0.25), 0 10px 30px rgba(234,178,46,0.12)",
+              background: `linear-gradient(160deg, rgba(234,178,46,0.07), transparent 55%), ${CARTAO}`,
+            }
+          : {}),
+      }}
     >
       {children}
     </div>
@@ -760,11 +779,13 @@ function Painel() {
             <div className="grid h-full w-full min-w-0 content-center grid-cols-1 gap-3 xl:grid-cols-3">
               {data.setores.map((s) => {
                 const corDoSetor = cor(s);
+                /* Mesmo critério do tile lá de cima: quem mais faturou. */
+                const emDestaque = destaque?.id === s.id;
                 const pessoas = EQUIPE.filter((p) => p.setor === s.id);
                 const visiveis = pessoas.slice(0, MAX_ROSTOS);
                 const resto = pessoas.length - visiveis.length;
                 return (
-                  <Card key={s.id} className="flex flex-col self-center pb-2">
+                  <Card key={s.id} className="flex flex-col self-center pb-2" destaque={emDestaque}>
                     <div className="flex shrink-0 items-center gap-3 px-4 pt-4">
                       <Chip cor={corDoSetor} tamanho={44}>
                         {ICONE_SETOR[s.id] ?? <Package size={20} />}
@@ -777,8 +798,17 @@ function Painel() {
                           {DESCRICAO_SETOR[s.id] ?? ""}
                         </p>
                       </div>
+                      {emDestaque && (
+                        <span
+                          className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tracking-[0.08em] uppercase"
+                          style={{ backgroundColor: "rgba(234,178,46,0.14)", color: DOURADO }}
+                        >
+                          <Crown size={13} />
+                          Destaque
+                        </span>
+                      )}
                       <span
-                        className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
+                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${emDestaque ? "" : "ml-auto"}`}
                         style={{ borderColor: BORDA, color: MUDO }}
                       >
                         <Users size={13} />
