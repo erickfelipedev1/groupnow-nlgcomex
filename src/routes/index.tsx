@@ -786,14 +786,23 @@ function Painel() {
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-center gap-5 p-4">
+                    {/* Sem flex-wrap: com quatro pessoas numa tela estreita a linha
+                        quebrava, o card passava da altura da faixa e o
+                        overflow-hidden do carrossel cortava a última pessoa.
+                        Os tamanhos são fluidos para caber sempre numa linha. */}
+                    <div className="flex items-center justify-center gap-3 p-4 2xl:gap-5">
                       {visiveis.map((pessoa) => (
-                        <figure key={pessoa.foto} className="flex w-[124px] flex-col items-center">
+                        <figure
+                          key={pessoa.foto}
+                          className="flex min-w-0 flex-col items-center"
+                          style={{ width: "clamp(72px, 6.4vw, 124px)" }}
+                        >
                           <img
                             src={`/equipe/${pessoa.foto}.jpg`}
                             alt={pessoa.nome}
-                            className="h-[104px] w-[104px] rounded-full object-cover"
+                            className="aspect-square rounded-full object-cover"
                             style={{
+                              width: "clamp(60px, 5.4vw, 104px)",
                               // Rosto fica no terço de cima do retrato; centralizar
                               // cortaria a testa.
                               objectPosition: "center 22%",
@@ -801,9 +810,11 @@ function Painel() {
                             }}
                           />
                           <figcaption className="mt-3 w-full text-center">
-                            <p className="truncate text-base font-bold">{pessoa.nome}</p>
+                            <p className="truncate text-sm font-bold 2xl:text-base">
+                              {pessoa.nome}
+                            </p>
                             <p
-                              className="flex items-center justify-center gap-1.5 truncate text-xs"
+                              className="flex items-center justify-center gap-1.5 truncate text-[11px] 2xl:text-xs"
                               style={{ color: MUDO }}
                             >
                               <span
@@ -817,8 +828,12 @@ function Painel() {
                       ))}
                       {resto > 0 && (
                         <span
-                          className="grid h-[104px] w-[104px] shrink-0 place-items-center rounded-full border text-lg font-bold"
-                          style={{ borderColor: BORDA, color: MUDO }}
+                          className="grid aspect-square shrink-0 place-items-center rounded-full border text-lg font-bold"
+                          style={{
+                            width: "clamp(60px, 5.4vw, 104px)",
+                            borderColor: BORDA,
+                            color: MUDO,
+                          }}
                         >
                           +{resto}
                         </span>
