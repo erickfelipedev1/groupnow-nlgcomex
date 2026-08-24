@@ -133,6 +133,16 @@ const EQUIPE: { nome: string; setor: string; foto: string }[] = [
   { nome: "Nathaly", setor: "desembaraco", foto: "nathaly" },
 ];
 
+/** Subtítulo de cada card de equipe. */
+const DESCRICAO_SETOR: Record<string, string> = {
+  transporte: "Responsáveis pela logística e transporte",
+  agenciamento: "Gestão de agenciados e parcerias",
+  desembaraco: "Desembaraço e documentação",
+};
+
+/** Acima disso o card mostra "+N" em vez de espremer mais rostos. */
+const MAX_ROSTOS = 4;
+
 const ICONE_SETOR: Record<string, React.ReactNode> = {
   transporte: <Truck size={20} />,
   agenciamento: <Users size={20} />,
@@ -742,61 +752,81 @@ function Painel() {
               </Card>
             </div>
 
-            {/* Equipe numa faixa só. Agrupar por setor em colunas
-                proporcionais dava slots de 181x581 para fotos 427x640 — o
-                object-cover comia as laterais do rosto. Numa fileira única cada
-                retrato mantém a proporção original e ninguém é recortado. */}
-            <div className="grid h-full w-full min-w-0 grid-cols-1">
-              <Card className="flex min-h-0 flex-col">
-                <div className="flex shrink-0 items-center gap-3 px-4 pt-3">
-                  <Chip cor={MARCA} tamanho={36}>
-                    <Users size={18} />
-                  </Chip>
-                  <span className="text-lg font-bold tracking-[0.04em] uppercase">Equipe</span>
-                  <span className="ml-auto text-sm" style={{ color: MUDO }}>
-                    {EQUIPE.length} pessoas
-                  </span>
-                </div>
-                <div className="flex min-h-0 flex-1 items-center justify-center gap-3 px-4 py-3">
-                  {EQUIPE.map((pessoa) => {
-                    const setor = data.setores.find((s) => s.id === pessoa.setor);
-                    const corDoSetor = setor ? cor(setor) : MUDO;
-                    return (
-                      <figure
-                        key={pessoa.foto}
-                        className="relative min-w-0 flex-1 self-center overflow-hidden rounded-xl border"
-                        style={{ borderColor: BORDA, aspectRatio: "427 / 640" }}
+            {/* Equipe: um card por setor, com avatares circulares. O círculo
+                recorta um quadrado central do retrato 427x640 em vez de fatiar
+                as laterais, que era o problema da versão em faixa. */}
+            {/* content-center: os cards seguem a altura do conteúdo e ficam
+                centrados na faixa, em vez de esticarem e deixarem um vão. */}
+            <div className="grid h-full w-full min-w-0 content-center grid-cols-1 gap-3 xl:grid-cols-3">
+              {data.setores.map((s) => {
+                const corDoSetor = cor(s);
+                const pessoas = EQUIPE.filter((p) => p.setor === s.id);
+                const visiveis = pessoas.slice(0, MAX_ROSTOS);
+                const resto = pessoas.length - visiveis.length;
+                return (
+                  <Card key={s.id} className="flex flex-col self-center pb-2">
+                    <div className="flex shrink-0 items-center gap-3 px-4 pt-4">
+                      <Chip cor={corDoSetor} tamanho={44}>
+                        {ICONE_SETOR[s.id] ?? <Package size={20} />}
+                      </Chip>
+                      <div className="min-w-0">
+                        <p className="truncate text-xl font-bold tracking-[0.03em] uppercase">
+                          Equipe {s.nome}
+                        </p>
+                        <p className="truncate text-sm" style={{ color: MUDO }}>
+                          {DESCRICAO_SETOR[s.id] ?? ""}
+                        </p>
+                      </div>
+                      <span
+                        className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
+                        style={{ borderColor: BORDA, color: MUDO }}
                       >
-                        <img
-                          src={`/equipe/${pessoa.foto}.jpg`}
-                          alt={pessoa.nome}
-                          className="h-full w-full object-cover"
-                        />
-                        {/* Degradê para o nome ficar legível sobre qualquer foto. */}
-                        <figcaption
-                          className="absolute inset-x-0 bottom-0 px-2.5 pt-10 pb-2"
-                          style={{
-                            background:
-                              "linear-gradient(to top, rgba(7,4,40,0.94), rgba(7,4,40,0))",
-                          }}
+                        <Users size={13} />
+                        {pessoas.length} {pessoas.length === 1 ? "pessoa" : "pessoas"}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-5 p-4">
+                      {visiveis.map((pessoa) => (
+                        <figure key={pessoa.foto} className="flex w-[124px] flex-col items-center">
+                          <img
+                            src={`/equipe/${pessoa.foto}.jpg`}
+                            alt={pessoa.nome}
+                            className="h-[104px] w-[104px] rounded-full object-cover"
+                            style={{
+                              // Rosto fica no terço de cima do retrato; centralizar
+                              // cortaria a testa.
+                              objectPosition: "center 22%",
+                              boxShadow: `0 0 0 3px ${corDoSetor}, 0 0 0 7px ${corDoSetor}22`,
+                            }}
+                          />
+                          <figcaption className="mt-3 w-full text-center">
+                            <p className="truncate text-base font-bold">{pessoa.nome}</p>
+                            <p
+                              className="flex items-center justify-center gap-1.5 truncate text-xs"
+                              style={{ color: MUDO }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: corDoSetor }}
+                              />
+                              {s.nome}
+                            </p>
+                          </figcaption>
+                        </figure>
+                      ))}
+                      {resto > 0 && (
+                        <span
+                          className="grid h-[104px] w-[104px] shrink-0 place-items-center rounded-full border text-lg font-bold"
+                          style={{ borderColor: BORDA, color: MUDO }}
                         >
-                          <p className="truncate text-base font-bold">{pessoa.nome}</p>
-                          <p
-                            className="flex items-center gap-1.5 truncate text-xs"
-                            style={{ color: MUDO }}
-                          >
-                            <span
-                              className="h-1.5 w-1.5 shrink-0 rounded-full"
-                              style={{ backgroundColor: corDoSetor }}
-                            />
-                            {setor ? setor.nome : pessoa.setor}
-                          </p>
-                        </figcaption>
-                      </figure>
-                    );
-                  })}
-                </div>
-              </Card>
+                          +{resto}
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           </div>
 
