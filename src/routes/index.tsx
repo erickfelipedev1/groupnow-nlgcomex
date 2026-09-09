@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -30,8 +30,18 @@ import {
   TrendingUp,
   Trophy,
   Truck,
+  Upload,
   Users,
 } from "lucide-react";
+import {
+  DESCRICAO_SETOR,
+  EQUIPE,
+  iniciais,
+  MarcaLogo,
+  MarcaSimbolo,
+  NOME_EMPRESA,
+  UNIDADE_MARGEM,
+} from "@/lib/painel/registro";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -112,34 +122,8 @@ const COR_SETOR: Record<string, string> = {
   desembaraco: "#8b7cff",
 };
 
-/** A margem é por unidade de negócio; o painel acompanha a da NLG. */
-const UNIDADE_MARGEM = "NLG";
 /** Meta de margem do ano, em pontos percentuais. */
 const META_MARGEM = 40;
-
-/**
- * A equipe vem das fotos em public/equipe, agrupadas por setor. Não há número
- * por pessoa: o monday só tem dado por setor e por unidade, e repetir o
- * percentual do setor em cada rosto sugeriria desempenho individual.
- */
-const EQUIPE: { nome: string; setor: string; foto: string }[] = [
-  { nome: "Cristiane", setor: "transporte", foto: "cristiane" },
-  { nome: "Kledson", setor: "transporte", foto: "kledson" },
-  { nome: "Amanda", setor: "agenciamento", foto: "amanda" },
-  { nome: "Bianca", setor: "agenciamento", foto: "bianca" },
-  { nome: "Isabela", setor: "agenciamento", foto: "isabela" },
-  { nome: "Leonardo", setor: "desembaraco", foto: "leonardo" },
-  { nome: "Luiza", setor: "desembaraco", foto: "luiza" },
-  { nome: "Marta", setor: "desembaraco", foto: "marta" },
-  { nome: "Nathaly", setor: "desembaraco", foto: "nathaly" },
-];
-
-/** Subtítulo de cada card de equipe. */
-const DESCRICAO_SETOR: Record<string, string> = {
-  transporte: "Responsáveis pela logística e transporte",
-  agenciamento: "Gestão de agenciados e parcerias",
-  desembaraco: "Desembaraço e documentação",
-};
 
 /** Acima disso o card mostra "+N" em vez de espremer mais rostos. */
 const MAX_ROSTOS = 4;
@@ -171,35 +155,6 @@ function mesesRestantes(ano: number): number {
   if (agora.getFullYear() > ano) return 0;
   if (agora.getFullYear() < ano) return 12;
   return 12 - (agora.getMonth() + 1);
-}
-
-/**
- * Marca de barras ascendentes, redesenhada em SVG a partir do arquivo enviado —
- * quatro retângulos, então vetor sai mais nítido que um PNG reescalado.
- *
- * A terceira barra é preta no original. Aqui ela vai em branco: sobre o navy do
- * painel, preto sobre escuro simplesmente desaparece.
- */
-function LogoBarras({ tamanho = 40 }: { tamanho?: number }) {
-  const barras = [
-    { x: 1, altura: 14, cor: "#76b82a" },
-    { x: 11, altura: 20, cor: "#f05a24" },
-    { x: 21, altura: 27, cor: "#ffffff" },
-    { x: 31, altura: 33, cor: "#2456a6" },
-  ];
-  return (
-    <svg
-      width={tamanho}
-      height={tamanho}
-      viewBox="0 0 40 40"
-      role="img"
-      aria-label="Now Logistics Group"
-    >
-      {barras.map((b) => (
-        <rect key={b.x} x={b.x} y={37 - b.altura} width={7} height={b.altura} fill={b.cor} />
-      ))}
-    </svg>
-  );
 }
 
 function Card({
@@ -337,10 +292,21 @@ function MensalChart({ valores, cor }: { valores: number[]; cor: string }) {
 const SEGUNDOS_POR_SLIDE = 12;
 const SLIDES = ["Por setor", "Consolidado", "Equipe"];
 
+/** Resposta da rota de upload — só os campos que a tela usa. */
+type RespostaUpload = {
+  ok?: boolean;
+  erro?: string;
+  semMudanca?: boolean;
+  mudancas?: { setor: string; mes: string; de: number; para: number }[];
+};
+
 function Painel() {
   const [data, setData] = useState<PainelData | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [slide, setSlide] = useState(0);
+  const [enviando, setEnviando] = useState(false);
+  const [mensagem, setMensagem] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const arquivoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const id = setInterval(
@@ -350,28 +316,86 @@ function Painel() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    let ativo = true;
-    const carregar = async () => {
-      try {
-        const res = await fetch("/api/public/painel");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as PainelData;
-        if (ativo) {
-          setData(json);
-          setErro(null);
-        }
-      } catch (e) {
-        if (ativo) setErro(e instanceof Error ? e.message : "Falha ao carregar");
-      }
-    };
-    carregar();
-    const id = setInterval(carregar, 5 * 60 * 1000);
-    return () => {
-      ativo = false;
-      clearInterval(id);
-    };
+  const carregarPainelRemoto = useCallback(async () => {
+    try {
+      const res = await fetch("/api/public/painel");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as PainelData;
+      setData(json);
+      setErro(null);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao carregar");
+    }
   }, []);
+
+  useEffect(() => {
+    carregarPainelRemoto();
+    const id = setInterval(carregarPainelRemoto, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [carregarPainelRemoto]);
+
+  useEffect(() => {
+    if (!mensagem) return;
+    const id = setTimeout(() => setMensagem(null), 9000);
+    return () => clearTimeout(id);
+  }, [mensagem]);
+
+  /**
+   * A senha fica só em sessionStorage (some ao fechar a aba) — evita pedir a
+   * cada envio na mesma sessão sem guardar a credencial de vez.
+   */
+  const enviarArquivo = useCallback(
+    async (arquivo: File) => {
+      let senha = sessionStorage.getItem("painel-senha-upload");
+      if (!senha) {
+        senha = window.prompt("Senha para atualizar os dados:");
+        if (!senha) return;
+      }
+
+      setEnviando(true);
+      setMensagem(null);
+      try {
+        const form = new FormData();
+        form.append("arquivo", arquivo);
+        const res = await fetch(`/api/public/planilha-upload?secret=${encodeURIComponent(senha)}`, {
+          method: "POST",
+          body: form,
+        });
+        const corpo = (await res.json().catch(() => ({}))) as RespostaUpload;
+
+        if (res.status === 401) {
+          sessionStorage.removeItem("painel-senha-upload");
+          setMensagem({ tipo: "erro", texto: "Senha incorreta." });
+          return;
+        }
+        sessionStorage.setItem("painel-senha-upload", senha);
+
+        if (!res.ok || !corpo.ok) {
+          setMensagem({
+            tipo: "erro",
+            texto: corpo.erro ?? `Falha ao enviar (HTTP ${res.status}).`,
+          });
+          return;
+        }
+        if (corpo.semMudanca) {
+          setMensagem({ tipo: "ok", texto: "Nada mudou — a planilha já estava igual ao painel." });
+          return;
+        }
+
+        const n = corpo.mudancas?.length ?? 0;
+        setMensagem({
+          tipo: "ok",
+          texto: `Atualizado: ${n} ${n === 1 ? "valor mudou" : "valores mudaram"}.`,
+        });
+        await carregarPainelRemoto();
+      } catch (e) {
+        setMensagem({ tipo: "erro", texto: e instanceof Error ? e.message : "Falha ao enviar." });
+      } finally {
+        setEnviando(false);
+      }
+    },
+    [carregarPainelRemoto],
+  );
 
   if (!data) {
     return (
@@ -423,7 +447,7 @@ function Painel() {
         style={{ borderColor: BORDA }}
       >
         <span className="mb-4 grid h-10 w-10 place-items-center">
-          <LogoBarras tamanho={34} />
+          <MarcaSimbolo tamanho={34} />
         </span>
         {[LayoutGrid, Truck, Users, Package, BarChart3, Target, Settings, LogOut].map(
           (Icone, i) => (
@@ -444,12 +468,10 @@ function Painel() {
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 xl:p-4">
         <header className="flex shrink-0 flex-wrap items-center gap-3">
-          <img
-            src="/logo-nlg.png"
-            alt="Now Logistics Group"
-            className="h-8 w-auto shrink-0 2xl:h-9"
-          />
-          <h1 className="text-2xl font-bold tracking-[0.01em] 2xl:text-3xl">PAINEL DE METAS</h1>
+          <MarcaLogo className="h-8 w-auto shrink-0 2xl:h-9" />
+          <h1 className="text-2xl font-bold tracking-[0.01em] 2xl:text-3xl">
+            PAINEL DE METAS <span style={{ color: MUDO }}>·</span> {NOME_EMPRESA}
+          </h1>
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-[0.1em] uppercase"
             style={{ backgroundColor: "rgba(52,211,153,0.12)", color: VERDE }}
@@ -460,6 +482,30 @@ function Painel() {
           <span className="text-sm" style={{ color: MUDO }}>
             Atualizado às {hora(data.atualizadoEm)}
           </span>
+
+          <input
+            ref={arquivoRef}
+            type="file"
+            accept=".xlsx"
+            className="hidden"
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              e.target.value = ""; // permite reenviar o mesmo arquivo depois
+              if (arquivo) void enviarArquivo(arquivo);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => arquivoRef.current?.click()}
+            disabled={enviando}
+            title="Enviar uma planilha .xlsx atualizada"
+            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] disabled:opacity-50"
+            style={{ borderColor: BORDA, color: MUDO }}
+          >
+            <Upload size={13} />
+            {enviando ? "Enviando…" : "Atualizar planilha"}
+          </button>
+
           <span
             className="ml-auto rounded-xl border px-4 py-1.5 text-base font-semibold"
             style={{ borderColor: BORDA, backgroundColor: CARTAO }}
@@ -467,6 +513,20 @@ function Painel() {
             {data.ano}
           </span>
         </header>
+
+        {mensagem && (
+          <div
+            className="shrink-0 rounded-xl border px-4 py-2 text-sm"
+            style={{
+              borderColor: mensagem.tipo === "ok" ? "rgba(52,211,153,.35)" : "rgba(244,63,94,.35)",
+              backgroundColor:
+                mensagem.tipo === "ok" ? "rgba(52,211,153,.08)" : "rgba(244,63,94,.08)",
+              color: mensagem.tipo === "ok" ? VERDE : VERMELHO,
+            }}
+          >
+            {mensagem.texto}
+          </div>
+        )}
 
         <section className="grid shrink-0 grid-cols-2 gap-2.5 sm:grid-cols-4 2xl:grid-cols-8">
           <Tile
@@ -827,18 +887,34 @@ function Painel() {
                           className="flex min-w-0 flex-col items-center"
                           style={{ width: "clamp(72px, 6.4vw, 124px)" }}
                         >
-                          <img
-                            src={`/equipe/${pessoa.foto}.jpg`}
-                            alt={pessoa.nome}
-                            className="aspect-square rounded-full object-cover"
-                            style={{
-                              width: "clamp(60px, 5.4vw, 104px)",
-                              // Rosto fica no terço de cima do retrato; centralizar
-                              // cortaria a testa.
-                              objectPosition: "center 22%",
-                              boxShadow: `0 0 0 3px ${corDoSetor}, 0 0 0 7px ${corDoSetor}22`,
-                            }}
-                          />
+                          {pessoa.foto ? (
+                            <img
+                              src={`/equipe/${pessoa.foto}.jpg`}
+                              alt={pessoa.nome}
+                              className="aspect-square rounded-full object-cover"
+                              style={{
+                                width: "clamp(60px, 5.4vw, 104px)",
+                                // Rosto fica no terço de cima do retrato;
+                                // centralizar cortaria a testa.
+                                objectPosition: "center 22%",
+                                boxShadow: `0 0 0 3px ${corDoSetor}, 0 0 0 7px ${corDoSetor}22`,
+                              }}
+                            />
+                          ) : (
+                            // Sem foto (modo demonstração): iniciais. Não geramos
+                            // rostos fictícios para uma vitrine pública.
+                            <span
+                              className="grid aspect-square place-items-center rounded-full text-xl font-bold"
+                              style={{
+                                width: "clamp(60px, 5.4vw, 104px)",
+                                color: corDoSetor,
+                                background: `radial-gradient(circle at 32% 28%, ${corDoSetor}2e, ${corDoSetor}12 70%)`,
+                                boxShadow: `0 0 0 3px ${corDoSetor}, 0 0 0 7px ${corDoSetor}22`,
+                              }}
+                            >
+                              {iniciais(pessoa.nome)}
+                            </span>
+                          )}
                           <figcaption className="mt-3 w-full text-center">
                             <p className="truncate text-sm font-bold 2xl:text-base">
                               {pessoa.nome}

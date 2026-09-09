@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicMondaySyncRouteImport } from './routes/api/public/monday-sync'
 import { Route as ApiPublicPainelRouteImport } from './routes/api/public/painel'
+import { Route as ApiPublicPlanilhaUploadRouteImport } from './routes/api/public/planilha-upload'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,57 @@ const ApiPublicPainelRoute = ApiPublicPainelRouteImport.update({
   path: '/api/public/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPlanilhaUploadRoute = ApiPublicPlanilhaUploadRouteImport.update({
+  id: '/api/public/planilha-upload',
+  path: '/api/public/planilha-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/monday-sync': typeof ApiPublicMondaySyncRoute
   '/api/public/painel': typeof ApiPublicPainelRoute
+  '/api/public/planilha-upload': typeof ApiPublicPlanilhaUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/monday-sync': typeof ApiPublicMondaySyncRoute
   '/api/public/painel': typeof ApiPublicPainelRoute
+  '/api/public/planilha-upload': typeof ApiPublicPlanilhaUploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/public/monday-sync': typeof ApiPublicMondaySyncRoute
   '/api/public/painel': typeof ApiPublicPainelRoute
+  '/api/public/planilha-upload': typeof ApiPublicPlanilhaUploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/monday-sync' | '/api/public/painel'
+  fullPaths:
+    | '/'
+    | '/api/public/monday-sync'
+    | '/api/public/painel'
+    | '/api/public/planilha-upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/monday-sync' | '/api/public/painel'
-  id: '__root__' | '/' | '/api/public/monday-sync' | '/api/public/painel'
+  to:
+    | '/'
+    | '/api/public/monday-sync'
+    | '/api/public/painel'
+    | '/api/public/planilha-upload'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/monday-sync'
+    | '/api/public/painel'
+    | '/api/public/planilha-upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPublicMondaySyncRoute: typeof ApiPublicMondaySyncRoute
   ApiPublicPainelRoute: typeof ApiPublicPainelRoute
+  ApiPublicPlanilhaUploadRoute: typeof ApiPublicPlanilhaUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +105,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPainelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/planilha-upload': {
+      id: '/api/public/planilha-upload'
+      path: '/api/public/planilha-upload'
+      fullPath: '/api/public/planilha-upload'
+      preLoaderRoute: typeof ApiPublicPlanilhaUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +119,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPublicMondaySyncRoute: ApiPublicMondaySyncRoute,
   ApiPublicPainelRoute: ApiPublicPainelRoute,
+  ApiPublicPlanilhaUploadRoute: ApiPublicPlanilhaUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
