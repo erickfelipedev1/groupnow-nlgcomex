@@ -1,3 +1,4 @@
+import { DEMO, metricasDemo } from "./demo";
 import { calcular, type Metricas } from "./metrics";
 import { carregarPainel } from "./store.server";
 
@@ -16,5 +17,10 @@ export function anoDoPainel(): number {
 }
 
 export async function carregarMetricas(ano = anoDoPainel()): Promise<Metricas> {
+  // Sai antes de qualquer acesso ao banco. É isto que garante que o build de
+  // demonstração não consegue ler dado real — não a disciplina de configurar
+  // as variáveis certas.
+  if (DEMO) return metricasDemo();
+
   return calcular(await carregarPainel(ano));
 }

@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { interpretar, interpretarMargem, QUERY_METAS, QUERY_MARGEM } from "@/lib/painel/monday";
-import { anoDoPainel } from "@/lib/painel/painel.server";
-import { salvarMetas, substituirMargem, substituirRealizado } from "@/lib/painel/store.server";
-import { safeEqual } from "@/lib/webhook-secret.server";
+import { DEMO } from "@/lib/painel/demo";
 
 /**
  * Sincroniza o painel com o quadro "Metas do Grupo Now" do monday.com.
@@ -23,6 +20,19 @@ export const Route = createFileRoute("/api/public/monday-sync")({
 });
 
 async function sincronizar(request: Request): Promise<Response> {
+  // Em demonstração a rota não existe, e os imports de integração ficam atrás
+  // deste retorno: como DEMO vira constante em tempo de build, o bundler
+  // descarta o resto — ids de quadro e nomes de coluna do cliente não chegam
+  // ao pacote público.
+  if (DEMO) return new Response("Not found", { status: 404 });
+
+  const { interpretar, interpretarMargem, QUERY_METAS, QUERY_MARGEM } =
+    await import("@/lib/painel/monday");
+  const { anoDoPainel } = await import("@/lib/painel/painel.server");
+  const { salvarMetas, substituirMargem, substituirRealizado } =
+    await import("@/lib/painel/store.server");
+  const { safeEqual } = await import("@/lib/webhook-secret.server");
+
   const segredo = process.env["PAINEL_SYNC_SECRET"];
   const token = process.env["MONDAY_TOKEN"];
 

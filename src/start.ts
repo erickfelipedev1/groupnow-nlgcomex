@@ -2,6 +2,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { DEMO } from "@/lib/painel/demo";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -26,6 +27,10 @@ const csrfMiddleware = createCsrfMiddleware({
 });
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
+  // Em demonstração o middleware sai de cena: ele chama supabase.auth
+  // .getSession(), e o cliente lança quando falta credencial. O sintoma seria
+  // a página inteira em branco, não um erro legível. Desligado aqui, em
+  // arquivo nosso — os arquivos do integrations/ são gerados e sobrescritos.
+  functionMiddleware: DEMO ? [] : [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));
