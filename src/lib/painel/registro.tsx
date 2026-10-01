@@ -27,13 +27,26 @@ const EQUIPE_REAL: Pessoa[] = [
   { nome: "Luiza", setor: "desembaraco", foto: "luiza" },
   { nome: "Marta", setor: "desembaraco", foto: "marta" },
   { nome: "Nathaly", setor: "desembaraco", foto: "nathaly" },
+  { nome: "Ana Laura", setor: "comercial", foto: "ana-laura" },
+  { nome: "Erik", setor: "comercial", foto: "erik" },
 ];
 
 const DESCRICAO_REAL: Record<string, string> = {
   transporte: "Responsáveis pela logística e transporte",
   agenciamento: "Gestão de agenciados e parcerias",
   desembaraco: "Desembaraço e documentação",
+  comercial: "Prospecção e relacionamento com clientes",
 };
+
+/**
+ * Equipes que aparecem no slide "Equipe" mas não têm meta de faturamento
+ * própria — por isso não estão em SETORES nem vêm de /api/public/painel.
+ */
+export type EquipeExtra = { id: string; nome: string; cor: string };
+
+const EQUIPES_EXTRAS_REAL: EquipeExtra[] = [{ id: "comercial", nome: "Comercial", cor: "#2ec4b6" }];
+
+export const EQUIPES_EXTRAS: EquipeExtra[] = DEMO ? [] : EQUIPES_EXTRAS_REAL;
 
 export const EQUIPE: Pessoa[] = DEMO ? EQUIPE_DEMO : EQUIPE_REAL;
 

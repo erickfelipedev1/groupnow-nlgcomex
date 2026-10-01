@@ -19,6 +19,7 @@ import {
   Coins,
   Crown,
   Flag,
+  Handshake,
   Info,
   LayoutGrid,
   LogOut,
@@ -36,6 +37,7 @@ import {
 import {
   DESCRICAO_SETOR,
   EQUIPE,
+  EQUIPES_EXTRAS,
   iniciais,
   MarcaLogo,
   MarcaSimbolo,
@@ -132,6 +134,7 @@ const ICONE_SETOR: Record<string, React.ReactNode> = {
   transporte: <Truck size={20} />,
   agenciamento: <Users size={20} />,
   desembaraco: <Package size={20} />,
+  comercial: <Handshake size={20} />,
 };
 
 const brl = (v: number) =>
@@ -836,9 +839,18 @@ function Painel() {
                 as laterais, que era o problema da versão em faixa. */}
             {/* content-center: os cards seguem a altura do conteúdo e ficam
                 centrados na faixa, em vez de esticarem e deixarem um vão. */}
-            <div className="grid h-full w-full min-w-0 content-center grid-cols-1 gap-3 xl:grid-cols-3">
-              {data.setores.map((s) => {
-                const corDoSetor = cor(s);
+            {/* Setores com meta + equipes sem meta própria (ex.: Comercial).
+                Com 4 cards a grade vira 2x2 para não espremer os rostos. */}
+            <div
+              className={`grid h-full w-full min-w-0 content-center grid-cols-1 gap-3 ${
+                data.setores.length + EQUIPES_EXTRAS.length > 3 ? "xl:grid-cols-2" : "xl:grid-cols-3"
+              }`}
+            >
+              {[
+                ...data.setores.map((s) => ({ id: s.id as string, nome: s.nome, cor: cor(s) })),
+                ...EQUIPES_EXTRAS,
+              ].map((s) => {
+                const corDoSetor = s.cor;
                 /* Mesmo critério do tile lá de cima: quem mais faturou. */
                 const emDestaque = destaque?.id === s.id;
                 const pessoas = EQUIPE.filter((p) => p.setor === s.id);
