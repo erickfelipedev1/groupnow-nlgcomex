@@ -424,6 +424,11 @@ function Painel() {
    * coincide; se uma meta mudar, deixariam de coincidir.
    */
   const destaque = [...data.setores].sort((a, b) => b.realizadoAno - a.realizadoAno)[0];
+  /* Slide Equipe: com mais de 3 equipes os cards vão para 4 colunas e os
+     rostos encolhem para caber 4 pessoas por card sem estourar a altura. */
+  const compacto = data.setores.length + EQUIPES_EXTRAS.length > 3;
+  const tamFigura = compacto ? "clamp(60px, 4.6vw, 104px)" : "clamp(72px, 6.4vw, 124px)";
+  const tamAvatar = compacto ? "clamp(52px, 4vw, 88px)" : "clamp(60px, 5.4vw, 104px)";
 
   /**
    * Margem do ano = média simples dos meses lançados, como o usuário definiu.
@@ -840,10 +845,11 @@ function Painel() {
             {/* content-center: os cards seguem a altura do conteúdo e ficam
                 centrados na faixa, em vez de esticarem e deixarem um vão. */}
             {/* Setores com meta + equipes sem meta própria (ex.: Comercial).
-                Com 4 cards a grade vira 2x2 para não espremer os rostos. */}
+                Com 4 cards tudo fica numa linha só (2x2 estourava a altura
+                da faixa e o carrossel cortava), com rostos menores. */}
             <div
               className={`grid h-full w-full min-w-0 content-center grid-cols-1 gap-3 ${
-                data.setores.length + EQUIPES_EXTRAS.length > 3 ? "xl:grid-cols-2" : "xl:grid-cols-3"
+                compacto ? "xl:grid-cols-4" : "xl:grid-cols-3"
               }`}
             >
               {[
@@ -863,7 +869,9 @@ function Painel() {
                         {ICONE_SETOR[s.id] ?? <Package size={20} />}
                       </Chip>
                       <div className="min-w-0">
-                        <p className="truncate text-xl font-bold tracking-[0.03em] uppercase">
+                        <p
+                          className={`truncate font-bold tracking-[0.03em] uppercase ${compacto ? "text-base 2xl:text-lg" : "text-xl"}`}
+                        >
                           Equipe {s.nome}
                         </p>
                         <p className="truncate text-sm" style={{ color: MUDO }}>
@@ -884,7 +892,8 @@ function Painel() {
                         style={{ borderColor: BORDA, color: MUDO }}
                       >
                         <Users size={13} />
-                        {pessoas.length} {pessoas.length === 1 ? "pessoa" : "pessoas"}
+                        {pessoas.length}
+                        {!compacto && (pessoas.length === 1 ? " pessoa" : " pessoas")}
                       </span>
                     </div>
 
@@ -892,12 +901,14 @@ function Painel() {
                         quebrava, o card passava da altura da faixa e o
                         overflow-hidden do carrossel cortava a última pessoa.
                         Os tamanhos são fluidos para caber sempre numa linha. */}
-                    <div className="flex items-center justify-center gap-3 p-4 2xl:gap-5">
+                    <div
+                      className={`flex items-center justify-center p-4 ${compacto ? "gap-2 2xl:gap-3" : "gap-3 2xl:gap-5"}`}
+                    >
                       {visiveis.map((pessoa) => (
                         <figure
                           key={pessoa.foto}
                           className="flex min-w-0 flex-col items-center"
-                          style={{ width: "clamp(72px, 6.4vw, 124px)" }}
+                          style={{ width: tamFigura }}
                         >
                           {pessoa.foto ? (
                             <img
@@ -905,7 +916,7 @@ function Painel() {
                               alt={pessoa.nome}
                               className="aspect-square rounded-full object-cover"
                               style={{
-                                width: "clamp(60px, 5.4vw, 104px)",
+                                width: tamAvatar,
                                 // Rosto fica no terço de cima do retrato;
                                 // centralizar cortaria a testa.
                                 objectPosition: "center 22%",
@@ -918,7 +929,7 @@ function Painel() {
                             <span
                               className="grid aspect-square place-items-center rounded-full text-xl font-bold"
                               style={{
-                                width: "clamp(60px, 5.4vw, 104px)",
+                                width: tamAvatar,
                                 color: corDoSetor,
                                 background: `radial-gradient(circle at 32% 28%, ${corDoSetor}2e, ${corDoSetor}12 70%)`,
                                 boxShadow: `0 0 0 3px ${corDoSetor}, 0 0 0 7px ${corDoSetor}22`,
@@ -948,7 +959,7 @@ function Painel() {
                         <span
                           className="grid aspect-square shrink-0 place-items-center rounded-full border text-lg font-bold"
                           style={{
-                            width: "clamp(60px, 5.4vw, 104px)",
+                            width: tamAvatar,
                             borderColor: BORDA,
                             color: MUDO,
                           }}
