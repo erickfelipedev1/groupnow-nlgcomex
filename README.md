@@ -1,196 +1,108 @@
-# Grupo Now Goals
-
-Crie a tela do "Painel de Metas do Grupo Now" — um dashboard de uma página só,
-
-tema escuro, feito para ficar aberto numa TV do escritório.
-
-
-
-
-**Muito importante:** não calcule nada e não invente dados. Todos os números já
-
-vêm prontos de `GET /api/public/painel`, que essa rota já existe no projeto.
-
-Não crie mock, não crie outra fonte de dados, não recalcule percentual.
-
-
-
-
-O JSON é assim:
-
-
-
-
-```json
-
-{
-
-  "ano": 2026,
-
-  "atualizadoEm": "2026-08-18T20:42:25.172Z",
-
-  "metaGlobal": 30600000,
-
-  "realizadoAno": 9963600,
-
-  "progressoGlobal": 32.56,
-
-  "progressoGlobalMensal": [7.29, 5.34, 5.73, 8.33, 5.87, 0, 0, 0, 0, 0, 0, 0],
-
-  "setores": [
-
-    {
-
-      "id": "transporte",
-
-      "nome": "Transporte",
-
-      "cor": "#f2c94c",
-
-      "metaAnual": 12000000,
-
-      "realizadoAno": 2889600,
-
-      "progressoAnual": 24.08,
-
-      "progressoMensal": [6.41, 3.89, 3.56, 4.37, 5.85, 0, 0, 0, 0, 0, 0, 0],
-
-      "representatividade": 29.0
-
-    }
-
-  ]
-
-}
-
-```
-
-
-
-
-`setores` sempre traz três itens, nesta ordem: Transporte, Agenciamento,
-
-Desembaraço. Os arrays mensais têm sempre 12 posições (índice 0 = janeiro).
-
-Todo valor terminado em "progresso" ou "representatividade" já é percentual.
-
-
-
-
-## Layout
-
-
-
-
-Cabeçalho: título "Painel de Metas do Grupo Now" e, embaixo em texto pequeno e
-
-apagado, "Meta global {ano}: {metaGlobal} · realizado {realizadoAno} ·
-
-atualizado em {atualizadoEm}". Valores em reais formatados pt-BR sem centavos
-
-(R$ 30.600.000); percentuais com duas casas e vírgula (32,56%).
-
-
-
-
-Três faixas, todas com cartões de cantos arredondados, borda sutil e fundo um
-
-tom acima do fundo da página:
-
-
-
-
-1. **Quatro cartões de KPI**, lado a lado. O primeiro é o global ("Meta Anual",
-
-   `progressoGlobal`, cinza `#cbd5e1`); os outros três são
-
-   "Meta Anual – {nome}" com `progressoAnual` e a `cor` do próprio setor. Cada
-
-   cartão: bolinha da cor + título no topo, percentual gigante em fonte leve no
-
-   centro, uma barrinha de progresso fininha e, embaixo, "{realizadoAno} de
-
-   {metaAnual}" em texto pequeno.
-
-
-
-
-2. **Três painéis**:
-
-   - "Progresso Anual Individual – Dividido por Setor" — barras horizontais com
-
-     `progressoAnual` de cada setor, cada barra na cor do setor, ordenadas da
-
-     menor para a maior, com o valor escrito na ponta da barra.
-
-   - "Representatividade do Progresso Anual Dividido por Setor" — rosca
-
-     (donut) com `representatividade`, legenda à direita no formato
-
-     "Agenciamento: 50,7%".
-
-   - "Progresso Mensal da Meta Anual" — barras verticais dos 12 meses com
-
-     `progressoGlobalMensal`, em cinza `#cbd5e1`, valor escrito acima de cada
-
-     barra.
-
-
-
-
-3. **Um painel por setor** (Transporte, Agenciamento, Desembaraço), lado a lado:
-
-   barras verticais dos 12 meses com o `progressoMensal` do setor, na cor dele,
-
-   valor acima de cada barra e o percentual anual no canto do cabeçalho.
-
-
-
-
-Gráficos com Recharts. Eixos e rótulos em cinza-azulado apagado, fontes
-
-pequenas (10–11px), sem grid pesado, sem animação de entrada (o painel fica
-
-recarregando na TV). Meses abreviados (Jan, Fev, …) inclinados a -45°.
-
-
-
-
-Responsivo: em telas estreitas os cartões empilham em uma coluna.
-
-
-
-
-Paleta: fundo `#0d1526`, cartão `#16203a`, borda `#24334f`, texto `#e8eefb`,
-
-texto apagado `#8ea3c4`. Transporte `#f2c94c`, Agenciamento `#4aa3f0`,
-
-Desembaraço `#a78bfa` (mas prefira sempre a `cor` que vem no JSON).
-
-
-
-
-A tela deve se atualizar sozinha a cada 5 minutos, refazendo o fetch.
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://groupnow-nlgcomex.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/1f76da35-afbf-4a23-a414-e874bf416329).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+# Controle de Processos (sistema-projetos-ndl v2)
+
+Fluxo: CS (apresentação/montagem) → Projetos (Flex 10 · Full 15 · Premium 25) → Agenciamento (cotação, 1 ou 2 c/ certificação) → Projetos (estimativa, 2) → CS (apresentação da estimativa) → CX → Agenciamento (booking) → Viagem → Desembaraço → Liberado → Transporte → Chegou.
+Os prazos são em dias úteis (sem fim de semana e sem os feriados cadastrados).
+
+## 1. Banco (Supabase)
+SQL Editor → New query → cole `supabase/001_controle_processos.sql` → Run. Depois, uma query de cada vez, `002_prazo_por_plano_certificacao.sql`, `003_cargo_no_cadastro.sql`, `004_login_por_usuario.sql`, `005_checklist_sourcing.sql`, `006_fechamento_gerenciamento_emails.sql` e `007_situacao_proxima_acao.sql` → Run.
+Cria as tabelas novas e cadastra as 11 etapas e os feriados de 2026/2027. As tabelas antigas do sistema não são apagadas.
+
+## 2. Código (PowerShell, dentro da pasta do repositório)
+```powershell
+git checkout -b v2-processos
+Remove-Item -Recurse -Force app, components, lib, middleware.ts -ErrorAction SilentlyContinue
+# copie o conteúdo deste zip para a pasta (mantenha seu .env.local)
+npm install
 npm run dev
 ```
+Abra http://localhost:3000. Quando estiver ok:
+```powershell
+git add -A
+git commit -m "v2: controle de processos"
+git push -u origin v2-processos
+```
+A Vercel gera um preview dessa branch. Depois de validar, faça o merge na main.
+
+Variáveis de ambiente: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API Keys → service_role / secret). A service role fica só no servidor — nunca com prefixo NEXT_PUBLIC.
+
+## 3. Primeiro uso
+1. Login = primeiro nome, senha inicial = primeiro nome + 2026 (ex.: larissa / larissa2026). Crie as contas em Configurações → "Criar contas de todos os responsáveis do fluxo", ou cada pessoa usa "Primeiro acesso" na tela de login. No primeiro login a pessoa troca a senha. Cada conta é vinculada automaticamente às etapas com o primeiro nome dela.
+2. Em **Configurações**, marque os responsáveis padrão de cada etapa. A partir daí, cada processo cai sozinho em "Minhas tarefas" da pessoa certa.
+3. Em **Processos → + Novo processo**, cadastre os processos que hoje estão no Monday, depois avance cada um até a etapa em que ele está.
+
+## Telas
+- **Painel**: KPIs (ativos, em atraso, vencem hoje/amanhã, tempo médio, previsão média), fluxo das 12 etapas, análise de gargalos (realizado × prazo), maiores atrasos, próximas entregas e atividades recentes.
+- **Processos**: kanban das 12 etapas ou lista, filtros (responsável, plano, certificação, status, etapa, busca), abas Ativos / Concluídos / Cancelados.
+- **Processo**: cabeçalho com responsável, etapa, previsão e status; timeline das 12 etapas; etapa atual com "por que está aqui?", concluir e avançar, ajustar prazo, trocar responsável; abas Checklist, E-mails, Comentários, Histórico e Dados.
+- **Novo processo**: assistente em 4 passos (Cliente, Configuração, Responsáveis, Revisão) com previsão de chegada calculada.
+- **Minhas tarefas**: o que está com você, por atrasadas / vencem hoje / próximas.
+- **Manual**: fluxo geral, cada etapa com checklist e modelos relacionados, saudação, formulários, INPI e tabela de prazos.
+- **E-mails**: biblioteca de modelos preenchidos com os dados de um processo.
+- **Configurações**: Fluxo, Equipe, Operação e Sistema.
+
+## Estrutura do código
+- `components/ui/`: componentes compartilhados (KpiCard, StatusBadge, ProgressBar, Avatar, Tabs, FilterBar, Modal/Drawer, Menu, EmptyState, ActivityTimeline, SubmitButton).
+- `components/processos/`: ProcessCard, StageColumn, ProcessTimeline, NovoProcessoWizard.
+- `components/painel/`: FlowStrip, BottleneckChart.
+- `lib/status.ts`: regras de status, prazo e "motivo" usadas em todas as telas. `lib/dados.ts`: consultas e cálculos (previsão, médias).
+- Cores e tipografia: tokens em `app/globals.css` (`@theme`).
+
+## v9 — Clientes, portal do cliente, chat e anexos
+
+1. Rode `supabase/008_clientes_portal_chat_anexos.sql` no SQL Editor (ou o `000_tudo.sql`, que já inclui tudo).
+   - Cria o cadastro de clientes e vincula cada processo existente ao seu cliente (pelo nome da empresa).
+   - Cria o bucket privado `anexos` no Storage (confira em Storage › Buckets).
+2. **Clientes** (`/clientes`): cadastro, processos, arquivos do cliente e acesso ao portal.
+3. **Portal do cliente** (`/portal`): o cliente entra com o usuário gerado e vê só as etapas e datas.
+4. **Chat e demandas** (`/chat`): canal Geral, conversas diretas e demandas com responsável, processo e prazo.
+5. **Anexos**: aba Anexos no processo (por etapa + arquivos gerais) e botão "Anexar arquivo" na etapa atual.
+6. Recomendado: em Supabase › Authentication › Sign In / Providers, desligue "Allow new users to sign up" (as contas são criadas pelo servidor).
+
+## v10 — Aguardando o cliente (Onboarding e Apresentação da estimativa)
+
+Rode `supabase/009_aguardando_cliente.sql` (já incluído no `000_tudo.sql`).
+
+- A etapa 1 passa a se chamar **Onboarding**. O checklist dela é: enviar o onboarding (1 dia útil), enviar o formulário, aguardar o formulário e mandar o e-mail para Projetos.
+- **Apresentação da estimativa**: marcar a reunião de sourcing (1 dia útil), aguardar a devolutiva e mandar a devolutiva para o CX.
+- Enquanto o próximo item é de "espera do cliente", o prazo fica pausado e a etapa não entra como atrasada. A cada 7 dias aparece "Cobrar cliente", e o botão "Registrar cobrança" guarda a cobrança no histórico.
+- Quando o item de espera é marcado, a etapa ganha 1 dia útil (configurável) para terminar.
+- Em Configurações › Checklists, qualquer item pode virar "Espera do cliente".
+- No portal, o cliente vê "Estamos aguardando o formulário" quando a etapa depende dele.
+
+## v11 — Cotação de frete e Estimativa dentro de Projetos
+
+Rode `supabase/010_projetos_cotacao_estimativa.sql` (já incluído no `000_tudo.sql`).
+
+- O fluxo passa a ter 10 etapas. Cotação de frete e Estimativa de custo viram itens do checklist de **Projetos**, e o prazo 10/15/25 já cobre esses itens.
+- Os itens com responsável mandam uma **demanda automática** no chat quando o item anterior é marcado:
+  - Cotação internacional: Isabella/Cris, 1 dia útil (2 com certificação).
+  - Cotação rodoviária: Isabella/Cris, 1 dia útil.
+  - Montagem da estimativa: Alycia, 2 dias úteis.
+- A demanda aparece em Minhas tarefas › "Demandas para você" e no Chat. Concluir a demanda marca o item no checklist, e marcar o item conclui a demanda.
+- Processos que estavam em Cotação ou Estimativa voltam para Projetos no ponto certo do checklist, com o prazo original.
+- Em Configurações › Checklists, cada item pode ter responsável e prazo próprios.
+
+## v12 — Permissões por área
+
+Rode `supabase/011_permissoes_por_area.sql` (já incluído no `000_tudo.sql`).
+
+- **Todo mundo vê tudo**, e qualquer pessoa pode comentar e anexar arquivos.
+- **Marcar checklist, avançar, voltar, prazo, responsável, situação e cobrança** de uma etapa ficam liberados só para:
+  - quem é da área (cargo igual à área da etapa, ex.: CS no Onboarding);
+  - quem é responsável pela etapa;
+  - administradores.
+- **Itens com responsável próprio** (cotação → Isabella/Cris, estimativa → Alycia) só podem ser marcados por essas pessoas. A demanda ligada ao item só pode ser concluída por quem a recebeu.
+- **Administrador**: altera a configuração do fluxo e define o cargo e o acesso de administrador de cada pessoa em Configurações › Equipe › Usuários.
+  - Depois que o cargo de alguém é definido, só um administrador consegue mudá-lo.
+  - Quem já tem cargo de Gestão vira administrador ao rodar o SQL. Se ninguém tiver, o Erick vira.
+- As regras valem no banco de dados, não só na tela.
+
+## v14 — Importação do Monday + status Pausado
+
+1. Rode `supabase/012_pausado_importacao_monday.sql` (já incluído no `000_tudo.sql`).
+2. Rode `supabase/013_dados_monday.sql`. Ele importa os 97 itens do quadro "Clientes | Projetos". Pode rodar de novo sem duplicar nada.
+   - Os 45 ativos entram na etapa Projeto, com a data de início e o prazo (término) que estavam no Monday.
+   - Os 9 finalizados com Ordem = Sim entram ativos em CX · Ordem. Os outros 33 finalizados entram como Concluídos (histórico).
+   - Os 10 pausados entram com o novo status **Pausado** (aba própria, com botão para retomar).
+   - Os clientes são criados pelo CNPJ ou pelo nome. Produto vira a descrição do processo. Responsável, prioridade, score e links dos arquivos ficam registrados no histórico de cada processo.
+   - O serviço "Estimativa de custos" entra sem plano.
